@@ -7,7 +7,10 @@
  *
  *   .rbank
  *   .rbank open
- *   .rbank list <categoryId> [page]
+ *   .rbank list <categoryId> [page] [id|name|amount|amount_asc]
+ *   .rbank preview deposit all
+ *   .rbank preview deposit category <categoryId>
+ *   .rbank check recipe <requestId> <itemEntry> <amountPerCraft> [itemEntry amountPerCraft ...]
  *   .rbank deposit all
  *   .rbank deposit category <categoryId>
  *   .rbank deposit item <itemEntry> <amount>
@@ -18,7 +21,20 @@
  *   .rbank withdraw item <itemEntry> exact <amount> [categoryId] [page]
  *   .rbank withdraw needed <itemEntry> <amount> [itemEntry amount ...]
  *
+ *
  * The matching addon listens for hidden RBANK:* system protocol lines.
+ * Transaction details are emitted as:
+ *   RBANK:TX:BEGIN:<deposit|withdraw>:<total>:<itemCount>
+ *   RBANK:TX:ITEM:<itemEntry>:<amount>
+ *   RBANK:TX:END:<deposit|withdraw>:<total>:<itemCount>
+ * Deposit preview is emitted as:
+ *   RBANK:PREVIEW:BEGIN:<all|category>:<categoryId>:<total>:<itemCount>
+ *   RBANK:PREVIEW:ITEM:<itemEntry>:<amount>
+ *   RBANK:PREVIEW:END:<all|category>:<categoryId>:<total>:<itemCount>
+ * Recipe bank-count checks are emitted as:
+ *   RBANK:CHECK:BEGIN:<requestId>:<itemCount>
+ *   RBANK:CHECK:ITEM:<itemEntry>:<storedAmount>
+ *   RBANK:CHECK:END:<requestId>:<itemCount>
  */
 
 #include "ReagentBankAccount.h"
@@ -39,8 +55,10 @@
 
 #include <algorithm>
 #include <array>
+#include <cerrno>
 #include <cctype>
 #include <cstdlib>
+#include <limits>
 #include <map>
 #include <sstream>
 #include <string>
@@ -98,6 +116,19 @@ namespace ReagentBank
         All
     };
 
+    enum class SortMode : uint8
+    {
+        Id,
+        Name,
+        AmountDesc,
+        AmountAsc
+    };
+
+    static constexpr uint32 MAX_REAGENT_BANK_STORED_AMOUNT = std::numeric_limits<uint32>::max();
+    static constexpr std::size_t MAX_REAGENT_BANK_ITEM_AMOUNT_PAIRS = 80;
+
+    using ItemAmountMap = std::map<uint32, uint32>;
+
     static std::string ToLower(std::string value)
     {
         for (char& c : value)
@@ -123,16 +154,91 @@ namespace ReagentBank
 
     static bool TryParseUInt32(std::string const& text, uint32& value)
     {
+        value = 0;
+
         if (text.empty())
             return false;
 
+        for (char c : text)
+            if (!std::isdigit(static_cast<unsigned char>(c)))
+                return false;
+
+        errno = 0;
         char* end = nullptr;
-        unsigned long parsed = std::strtoul(text.c_str(), &end, 10);
-        if (!end || *end != '\0')
+        unsigned long long parsed = std::strtoull(text.c_str(), &end, 10);
+        if (errno == ERANGE || !end || *end != '\0' || parsed > std::numeric_limits<uint32>::max())
             return false;
 
         value = uint32(parsed);
         return true;
+    }
+
+    static bool AddAmountChecked(uint32 current, uint32 add, uint32& out)
+    {
+        if (add > MAX_REAGENT_BANK_STORED_AMOUNT - current)
+            return false;
+
+        out = current + add;
+        return true;
+    }
+
+    static bool AddToItemAmountMapChecked(ItemAmountMap& map, uint32 itemEntry, uint32 amount)
+    {
+        if (!itemEntry || !amount)
+            return false;
+
+        uint32 updated = 0;
+        if (!AddAmountChecked(map[itemEntry], amount, updated))
+            return false;
+
+        map[itemEntry] = updated;
+        return true;
+    }
+
+    static uint64 SumItemAmountMap(ItemAmountMap const& items)
+    {
+        uint64 total = 0;
+        for (std::pair<uint32 const, uint32> const& item : items)
+            total += item.second;
+
+        return total;
+    }
+
+    static std::string SanitizeProtocolText(std::string text)
+    {
+        for (char& c : text)
+            if (c == '\r' || c == '\n')
+                c = ' ';
+
+        return text;
+    }
+
+    static char const* SortModeToString(SortMode mode)
+    {
+        switch (mode)
+        {
+        case SortMode::Name:       return "name";
+        case SortMode::AmountDesc: return "amount";
+        case SortMode::AmountAsc:  return "amount_asc";
+        case SortMode::Id:
+        default:                   return "id";
+        }
+    }
+
+    static SortMode ParseSortMode(std::string const& text)
+    {
+        std::string lower = ToLower(text);
+
+        if (lower == "name" || lower == "alpha" || lower == "alphabetical")
+            return SortMode::Name;
+
+        if (lower == "amount" || lower == "amount_desc" || lower == "count" || lower == "count_desc")
+            return SortMode::AmountDesc;
+
+        if (lower == "amount_asc" || lower == "count_asc")
+            return SortMode::AmountAsc;
+
+        return SortMode::Id;
     }
 
     static bool TryParseItemAmountPairs(std::vector<std::string> const& tokens, std::size_t startIndex, std::vector<std::pair<uint32, uint32>>& pairs)
@@ -142,9 +248,15 @@ namespace ReagentBank
         if (startIndex >= tokens.size())
             return false;
 
-        if (((tokens.size() - startIndex) % 2) != 0)
+        std::size_t const tokenCount = tokens.size() - startIndex;
+        if ((tokenCount % 2) != 0)
             return false;
 
+        std::size_t const pairCount = tokenCount / 2;
+        if (pairCount == 0 || pairCount > MAX_REAGENT_BANK_ITEM_AMOUNT_PAIRS)
+            return false;
+
+        ItemAmountMap aggregated;
         for (std::size_t index = startIndex; index < tokens.size(); index += 2)
         {
             uint32 itemEntry = 0;
@@ -156,8 +268,12 @@ namespace ReagentBank
             if (!itemEntry || !amount)
                 return false;
 
-            pairs.emplace_back(itemEntry, amount);
+            if (!AddToItemAmountMapChecked(aggregated, itemEntry, amount))
+                return false;
         }
+
+        for (std::pair<uint32 const, uint32> const& pair : aggregated)
+            pairs.emplace_back(pair.first, pair.second);
 
         return !pairs.empty();
     }
@@ -302,7 +418,7 @@ namespace ReagentBank
             "WHERE r.`account_id` = 0 AND r.`guid` <> 0 "
             "GROUP BY c.`account`, r.`item_entry` "
             "ON DUPLICATE KEY UPDATE "
-            "`amount` = `amount` + VALUES(`amount`), "
+            "`amount` = LEAST(4294967295, `amount` + VALUES(`amount`)), "
             "`item_subclass` = VALUES(`item_subclass`)");
 
         trans->Append(
@@ -348,7 +464,7 @@ namespace ReagentBank
             "ON owner.`account` = r.`account_id` "
             "WHERE r.`account_id` <> 0 AND r.`guid` = 0 "
             "ON DUPLICATE KEY UPDATE "
-            "`amount` = `amount` + VALUES(`amount`), "
+            "`amount` = LEAST(4294967295, `amount` + VALUES(`amount`)), "
             "`item_subclass` = VALUES(`item_subclass`)");
 
         trans->Append(
@@ -427,12 +543,42 @@ namespace ReagentBank
 
     static void SendOk(ChatHandler* handler, std::string const& message)
     {
-        SendProtocol(handler, Acore::StringFormat("RBANK:OK:{}", message));
+        SendProtocol(handler, Acore::StringFormat("RBANK:OK:{}", SanitizeProtocolText(message)));
     }
 
     static void SendError(ChatHandler* handler, std::string const& message)
     {
-        SendProtocol(handler, Acore::StringFormat("RBANK:ERR:{}", message));
+        SendProtocol(handler, Acore::StringFormat("RBANK:ERR:{}", SanitizeProtocolText(message)));
+    }
+
+    static void SendTransaction(ChatHandler* handler, char const* action, ItemAmountMap const& items)
+    {
+        if (!handler || !action || items.empty())
+            return;
+
+        uint64 const total = SumItemAmountMap(items);
+
+        SendProtocol(handler, Acore::StringFormat("RBANK:TX:BEGIN:{}:{}:{}", action, total, uint32(items.size())));
+
+        for (std::pair<uint32 const, uint32> const& item : items)
+            SendProtocol(handler, Acore::StringFormat("RBANK:TX:ITEM:{}:{}", item.first, item.second));
+
+        SendProtocol(handler, Acore::StringFormat("RBANK:TX:END:{}:{}:{}", action, total, uint32(items.size())));
+    }
+
+    static void SendDepositPreview(ChatHandler* handler, char const* scope, uint32 category, ItemAmountMap const& items)
+    {
+        if (!handler || !scope)
+            return;
+
+        uint64 const total = SumItemAmountMap(items);
+
+        SendProtocol(handler, Acore::StringFormat("RBANK:PREVIEW:BEGIN:{}:{}:{}:{}", scope, category, total, uint32(items.size())));
+
+        for (std::pair<uint32 const, uint32> const& item : items)
+            SendProtocol(handler, Acore::StringFormat("RBANK:PREVIEW:ITEM:{}:{}", item.first, item.second));
+
+        SendProtocol(handler, Acore::StringFormat("RBANK:PREVIEW:END:{}:{}:{}:{}", scope, category, total, uint32(items.size())));
     }
 
     static bool IsStorableReagent(ItemTemplate const* proto, uint32& itemEntry, uint32& itemSubclass)
@@ -512,7 +658,7 @@ namespace ReagentBank
         CharacterDatabase.CommitTransaction(trans);
     }
 
-    static void QueryCategoryTotals(Player const* player, uint32 category, uint32& typeCount, uint32& totalAmount)
+    static void QueryCategoryTotals(Player const* player, uint32 category, uint32& typeCount, uint64& totalAmount)
     {
         typeCount = 0;
         totalAmount = 0;
@@ -530,8 +676,9 @@ namespace ReagentBank
         if (!result)
             return;
 
-        typeCount = uint32((*result)[0].Get<uint64>());
-        totalAmount = uint32((*result)[1].Get<uint64>());
+        uint64 const rawTypeCount = (*result)[0].Get<uint64>();
+        typeCount = rawTypeCount > std::numeric_limits<uint32>::max() ? std::numeric_limits<uint32>::max() : uint32(rawTypeCount);
+        totalAmount = (*result)[1].Get<uint64>();
     }
 
     static void SendRoot(ChatHandler* handler, Player const* player)
@@ -544,7 +691,7 @@ namespace ReagentBank
         for (CategoryInfo const& category : Categories)
         {
             uint32 typeCount = 0;
-            uint32 totalAmount = 0;
+            uint64 totalAmount = 0;
             QueryCategoryTotals(player, category.SubClass, typeCount, totalAmount);
 
             SendProtocol(handler, Acore::StringFormat(
@@ -558,7 +705,7 @@ namespace ReagentBank
         SendProtocol(handler, "RBANK:END:ROOT");
     }
 
-    static void SendCategory(ChatHandler* handler, Player const* player, uint32 category, uint32 requestedPage)
+    static void SendCategory(ChatHandler* handler, Player const* player, uint32 category, uint32 requestedPage, SortMode sortMode = SortMode::Id)
     {
         if (!handler || !player)
             return;
@@ -572,8 +719,59 @@ namespace ReagentBank
         }
 
         uint32 typeCount = 0;
-        uint32 totalAmount = 0;
+        uint64 totalAmount = 0;
         QueryCategoryTotals(player, category, typeCount, totalAmount);
+
+        uint32 accountKey = 0;
+        uint32 guidKey = 0;
+        GetStorageKeys(player, accountKey, guidKey);
+
+        std::vector<StoredItem> items;
+        QueryResult result = CharacterDatabase.Query(
+            "SELECT item_entry, item_subclass, amount "
+            "FROM mod_reagent_bank_account "
+            "WHERE account_id = {} AND guid = {} AND item_subclass = {}",
+            accountKey, guidKey, category);
+
+        if (result)
+        {
+            do
+            {
+                StoredItem item;
+                item.ItemEntry = (*result)[0].Get<uint32>();
+                item.ItemSubclass = (*result)[1].Get<uint32>();
+                item.Amount = (*result)[2].Get<uint32>();
+
+                if (item.ItemEntry && item.Amount && IsCategory(item.ItemSubclass))
+                    items.push_back(item);
+            } while (result->NextRow());
+        }
+
+        std::stable_sort(items.begin(), items.end(), [sortMode](StoredItem const& left, StoredItem const& right)
+            {
+                if (sortMode == SortMode::AmountDesc)
+                {
+                    if (left.Amount != right.Amount)
+                        return left.Amount > right.Amount;
+                }
+                else if (sortMode == SortMode::AmountAsc)
+                {
+                    if (left.Amount != right.Amount)
+                        return left.Amount < right.Amount;
+                }
+                else if (sortMode == SortMode::Name)
+                {
+                    ItemTemplate const* leftProto = sObjectMgr->GetItemTemplate(left.ItemEntry);
+                    ItemTemplate const* rightProto = sObjectMgr->GetItemTemplate(right.ItemEntry);
+
+                    std::string const leftName = leftProto ? leftProto->Name1 : "";
+                    std::string const rightName = rightProto ? rightProto->Name1 : "";
+                    if (leftName != rightName)
+                        return leftName < rightName;
+                }
+
+                return left.ItemEntry < right.ItemEntry;
+            });
 
         uint32 const pageSize = GetPageSize();
         uint32 totalPages = typeCount == 0 ? 1 : ((typeCount + pageSize - 1) / pageSize);
@@ -584,40 +782,24 @@ namespace ReagentBank
         uint32 offset = page * pageSize;
 
         SendProtocol(handler, Acore::StringFormat(
-            "RBANK:BEGIN:CATEGORY:{}:{}:{}:{}:{}",
+            "RBANK:BEGIN:CATEGORY:{}:{}:{}:{}:{}:{}",
             category,
             page,
             totalPages,
             typeCount,
-            totalAmount));
+            totalAmount,
+            SortModeToString(sortMode)));
 
-        uint32 accountKey = 0;
-        uint32 guidKey = 0;
-        GetStorageKeys(player, accountKey, guidKey);
-
-        QueryResult result = CharacterDatabase.Query(
-            "SELECT item_entry, amount "
-            "FROM mod_reagent_bank_account "
-            "WHERE account_id = {} AND guid = {} AND item_subclass = {} "
-            "ORDER BY item_entry ASC "
-            "LIMIT {} OFFSET {}",
-            accountKey, guidKey, category, pageSize, offset);
-
-        if (result)
+        for (uint32 index = offset; index < items.size() && index < offset + pageSize; ++index)
         {
-            do
-            {
-                uint32 itemEntry = (*result)[0].Get<uint32>();
-                uint32 amount = (*result)[1].Get<uint32>();
-
-                SendProtocol(handler, Acore::StringFormat("RBANK:ITEM:{}:{}", itemEntry, amount));
-            } while (result->NextRow());
+            StoredItem const& item = items[index];
+            SendProtocol(handler, Acore::StringFormat("RBANK:ITEM:{}:{}", item.ItemEntry, item.Amount));
         }
 
         SendProtocol(handler, "RBANK:END:CATEGORY");
     }
 
-    static uint32 DepositFromSlot(Player* player, uint8 bagSlot, uint8 itemSlot, uint32 onlyCategory, std::map<uint32, StoredItem>& storedItems, std::map<uint32, uint32>& deposited)
+    static uint32 DepositFromSlot(Player* player, uint8 bagSlot, uint8 itemSlot, uint32 onlyCategory, std::map<uint32, StoredItem>& storedItems, ItemAmountMap& deposited, bool& overflowed)
     {
         Item* item = player->GetItemByPos(bagSlot, itemSlot);
         if (!item)
@@ -631,23 +813,34 @@ namespace ReagentBank
         if (onlyCategory && itemSubclass != onlyCategory)
             return 0;
 
-        uint32 count = item->GetCount();
+        uint32 const count = item->GetCount();
         if (!count)
             return 0;
 
         StoredItem& stored = storedItems[itemEntry];
         stored.ItemEntry = itemEntry;
         stored.ItemSubclass = itemSubclass;
-        stored.Amount += count;
 
-        deposited[itemEntry] += count;
+        uint32 updatedStoredAmount = 0;
+        if (!AddAmountChecked(stored.Amount, count, updatedStoredAmount) || !AddToItemAmountMapChecked(deposited, itemEntry, count))
+        {
+            overflowed = true;
+            LOG_ERROR("module", "ReagentBankAccount: refused deposit overflow for player {} item {} count {} stored {}.",
+                player->GetGUID().ToString(), itemEntry, count, stored.Amount);
+            return 0;
+        }
+
+        stored.Amount = updatedStoredAmount;
 
         player->DestroyItem(bagSlot, itemSlot, true);
         return count;
     }
 
-    static uint32 Deposit(Player* player, uint32 onlyCategory, std::map<uint32, uint32>& deposited)
+    static uint32 Deposit(Player* player, uint32 onlyCategory, ItemAmountMap& deposited, bool& overflowed)
     {
+        deposited.clear();
+        overflowed = false;
+
         if (!player)
             return 0;
 
@@ -657,7 +850,17 @@ namespace ReagentBank
         uint32 totalDeposited = 0;
 
         for (uint8 slot = INVENTORY_SLOT_ITEM_START; slot < INVENTORY_SLOT_ITEM_END; ++slot)
-            totalDeposited += DepositFromSlot(player, INVENTORY_SLOT_BAG_0, slot, onlyCategory, storedItems, deposited);
+        {
+            uint32 const depositedFromSlot = DepositFromSlot(player, INVENTORY_SLOT_BAG_0, slot, onlyCategory, storedItems, deposited, overflowed);
+            uint32 updatedTotal = 0;
+            if (AddAmountChecked(totalDeposited, depositedFromSlot, updatedTotal))
+                totalDeposited = updatedTotal;
+            else
+            {
+                overflowed = true;
+                break;
+            }
+        }
 
         for (uint8 bagSlot = INVENTORY_SLOT_BAG_START; bagSlot < INVENTORY_SLOT_BAG_END; ++bagSlot)
         {
@@ -666,7 +869,20 @@ namespace ReagentBank
                 continue;
 
             for (uint32 slot = 0; slot < bag->GetBagSize(); ++slot)
-                totalDeposited += DepositFromSlot(player, bagSlot, uint8(slot), onlyCategory, storedItems, deposited);
+            {
+                uint32 const depositedFromSlot = DepositFromSlot(player, bagSlot, uint8(slot), onlyCategory, storedItems, deposited, overflowed);
+                uint32 updatedTotal = 0;
+                if (AddAmountChecked(totalDeposited, depositedFromSlot, updatedTotal))
+                    totalDeposited = updatedTotal;
+                else
+                {
+                    overflowed = true;
+                    break;
+                }
+            }
+
+            if (overflowed)
+                break;
         }
 
         std::map<uint32, StoredItem> changedItems;
@@ -681,9 +897,96 @@ namespace ReagentBank
         return totalDeposited;
     }
 
-    static uint32 DepositSpecificItems(Player* player, std::vector<std::pair<uint32, uint32>> const& requestedItems, std::map<uint32, uint32>& deposited)
+
+    static uint32 PreviewDepositFromSlot(Player* player, uint8 bagSlot, uint8 itemSlot, uint32 onlyCategory, std::map<uint32, StoredItem>& simulatedStoredItems, ItemAmountMap& previewItems, bool& overflowed)
+    {
+        Item* item = player->GetItemByPos(bagSlot, itemSlot);
+        if (!item)
+            return 0;
+
+        uint32 itemEntry = 0;
+        uint32 itemSubclass = 0;
+        if (!IsStorableReagent(item->GetTemplate(), itemEntry, itemSubclass))
+            return 0;
+
+        if (onlyCategory && itemSubclass != onlyCategory)
+            return 0;
+
+        uint32 const count = item->GetCount();
+        if (!count)
+            return 0;
+
+        StoredItem& stored = simulatedStoredItems[itemEntry];
+        stored.ItemEntry = itemEntry;
+        stored.ItemSubclass = itemSubclass;
+
+        uint32 updatedStoredAmount = 0;
+        if (!AddAmountChecked(stored.Amount, count, updatedStoredAmount) || !AddToItemAmountMapChecked(previewItems, itemEntry, count))
+        {
+            overflowed = true;
+            return 0;
+        }
+
+        stored.Amount = updatedStoredAmount;
+        return count;
+    }
+
+    static uint32 CollectDepositPreview(Player* player, uint32 onlyCategory, ItemAmountMap& previewItems, bool& overflowed)
+    {
+        previewItems.clear();
+        overflowed = false;
+
+        if (!player)
+            return 0;
+
+        std::map<uint32, StoredItem> simulatedStoredItems;
+        LoadStoredItems(player, simulatedStoredItems);
+
+        uint32 totalPreviewed = 0;
+
+        for (uint8 slot = INVENTORY_SLOT_ITEM_START; slot < INVENTORY_SLOT_ITEM_END; ++slot)
+        {
+            uint32 const previewedFromSlot = PreviewDepositFromSlot(player, INVENTORY_SLOT_BAG_0, slot, onlyCategory, simulatedStoredItems, previewItems, overflowed);
+            uint32 updatedTotal = 0;
+            if (AddAmountChecked(totalPreviewed, previewedFromSlot, updatedTotal))
+                totalPreviewed = updatedTotal;
+            else
+            {
+                overflowed = true;
+                break;
+            }
+        }
+
+        for (uint8 bagSlot = INVENTORY_SLOT_BAG_START; bagSlot < INVENTORY_SLOT_BAG_END; ++bagSlot)
+        {
+            Bag* bag = player->GetBagByPos(bagSlot);
+            if (!bag)
+                continue;
+
+            for (uint32 slot = 0; slot < bag->GetBagSize(); ++slot)
+            {
+                uint32 const previewedFromSlot = PreviewDepositFromSlot(player, bagSlot, uint8(slot), onlyCategory, simulatedStoredItems, previewItems, overflowed);
+                uint32 updatedTotal = 0;
+                if (AddAmountChecked(totalPreviewed, previewedFromSlot, updatedTotal))
+                    totalPreviewed = updatedTotal;
+                else
+                {
+                    overflowed = true;
+                    break;
+                }
+            }
+
+            if (overflowed)
+                break;
+        }
+
+        return totalPreviewed;
+    }
+
+    static uint32 DepositSpecificItems(Player* player, std::vector<std::pair<uint32, uint32>> const& requestedItems, ItemAmountMap& deposited, bool& overflowed)
     {
         deposited.clear();
+        overflowed = false;
 
         if (!player || requestedItems.empty())
             return 0;
@@ -712,16 +1015,31 @@ namespace ReagentBank
             if (!amountToDeposit)
                 continue;
 
-            // Match the existing deposit behavior: remove bag items, then persist the virtual balance.
-            player->DestroyItemCount(itemEntry, amountToDeposit, true);
-
             StoredItem& stored = storedItems[itemEntry];
             stored.ItemEntry = itemEntry;
             stored.ItemSubclass = itemSubclass;
-            stored.Amount += amountToDeposit;
 
-            deposited[itemEntry] += amountToDeposit;
-            totalDeposited += amountToDeposit;
+            uint32 updatedStoredAmount = 0;
+            if (!AddAmountChecked(stored.Amount, amountToDeposit, updatedStoredAmount) || !AddToItemAmountMapChecked(deposited, itemEntry, amountToDeposit))
+            {
+                overflowed = true;
+                LOG_ERROR("module", "ReagentBankAccount: refused specific deposit overflow for player {} item {} count {} stored {}.",
+                    player->GetGUID().ToString(), itemEntry, amountToDeposit, stored.Amount);
+                continue;
+            }
+
+            // Match the existing deposit behavior: remove bag items, then persist the virtual balance.
+            player->DestroyItemCount(itemEntry, amountToDeposit, true);
+            stored.Amount = updatedStoredAmount;
+
+            uint32 updatedTotal = 0;
+            if (AddAmountChecked(totalDeposited, amountToDeposit, updatedTotal))
+                totalDeposited = updatedTotal;
+            else
+            {
+                overflowed = true;
+                break;
+            }
         }
 
         std::map<uint32, StoredItem> changedItems;
@@ -758,7 +1076,30 @@ namespace ReagentBank
         return item.ItemEntry && item.Amount && IsCategory(item.ItemSubclass);
     }
 
-    static uint32 WithdrawExact(Player* player, StoredItem& stored, uint32 requestedAmount, bool& stoppedForBagSpace)
+
+    static void SendRecipeCheck(ChatHandler* handler, Player const* player, uint32 requestId, std::vector<std::pair<uint32, uint32>> const& requestedItems)
+    {
+        if (!handler || !player)
+            return;
+
+        SendProtocol(handler, Acore::StringFormat("RBANK:CHECK:BEGIN:{}:{}", requestId, uint32(requestedItems.size())));
+
+        for (std::pair<uint32, uint32> const& requested : requestedItems)
+        {
+            uint32 const itemEntry = requested.first;
+            uint32 storedAmount = 0;
+
+            StoredItem stored;
+            if (itemEntry && LoadStoredItem(player, itemEntry, stored))
+                storedAmount = stored.Amount;
+
+            SendProtocol(handler, Acore::StringFormat("RBANK:CHECK:ITEM:{}:{}", itemEntry, storedAmount));
+        }
+
+        SendProtocol(handler, Acore::StringFormat("RBANK:CHECK:END:{}:{}", requestId, uint32(requestedItems.size())));
+    }
+
+    static uint32 WithdrawExact(Player* player, StoredItem& stored, uint32 requestedAmount, bool& stoppedForBagSpace, ItemAmountMap& withdrawn)
     {
         stoppedForBagSpace = false;
 
@@ -767,7 +1108,7 @@ namespace ReagentBank
             return 0;
 
         uint32 remainingRequest = std::min<uint32>(requestedAmount, stored.Amount);
-        uint32 withdrawn = 0;
+        uint32 withdrawnAmount = 0;
         uint32 stackSize = std::max<uint32>(1, proto->GetMaxStackSize());
 
         while (remainingRequest)
@@ -784,9 +1125,23 @@ namespace ReagentBank
             }
 
             Item* item = player->StoreNewItem(dest, stored.ItemEntry, true);
+            if (!item)
+            {
+                stoppedForBagSpace = true;
+                break;
+            }
+
             player->SendNewItem(item, toGive, true, false);
 
-            withdrawn += toGive;
+            uint32 updatedWithdrawnAmount = 0;
+            if (!AddAmountChecked(withdrawnAmount, toGive, updatedWithdrawnAmount) || !AddToItemAmountMapChecked(withdrawn, stored.ItemEntry, toGive))
+            {
+                LOG_ERROR("module", "ReagentBankAccount: transaction amount overflow while withdrawing player {} item {} count {}.",
+                    player->GetGUID().ToString(), stored.ItemEntry, toGive);
+                break;
+            }
+
+            withdrawnAmount = updatedWithdrawnAmount;
             remainingRequest -= toGive;
             stored.Amount -= toGive;
         }
@@ -795,10 +1150,10 @@ namespace ReagentBank
         changed[stored.ItemEntry] = stored;
         SaveStoredItems(player, changed);
 
-        return withdrawn;
+        return withdrawnAmount;
     }
 
-    static uint32 WithdrawItem(Player* player, uint32 itemEntry, WithdrawMode mode, bool& stoppedForBagSpace)
+    static uint32 WithdrawItem(Player* player, uint32 itemEntry, WithdrawMode mode, bool& stoppedForBagSpace, ItemAmountMap& withdrawn)
     {
         stoppedForBagSpace = false;
 
@@ -824,10 +1179,10 @@ namespace ReagentBank
             break;
         }
 
-        return WithdrawExact(player, stored, requested, stoppedForBagSpace);
+        return WithdrawExact(player, stored, requested, stoppedForBagSpace, withdrawn);
     }
 
-    static uint32 WithdrawItemAmount(Player* player, uint32 itemEntry, uint32 requestedAmount, bool& stoppedForBagSpace)
+    static uint32 WithdrawItemAmount(Player* player, uint32 itemEntry, uint32 requestedAmount, bool& stoppedForBagSpace, ItemAmountMap& withdrawn)
     {
         stoppedForBagSpace = false;
 
@@ -838,10 +1193,10 @@ namespace ReagentBank
         if (!LoadStoredItem(player, itemEntry, stored))
             return 0;
 
-        return WithdrawExact(player, stored, requestedAmount, stoppedForBagSpace);
+        return WithdrawExact(player, stored, requestedAmount, stoppedForBagSpace, withdrawn);
     }
 
-    static uint32 WithdrawSpecificItems(Player* player, std::vector<std::pair<uint32, uint32>> const& requestedItems, bool& stoppedForBagSpace, uint32& incompleteItems)
+    static uint32 WithdrawSpecificItems(Player* player, std::vector<std::pair<uint32, uint32>> const& requestedItems, bool& stoppedForBagSpace, uint32& incompleteItems, ItemAmountMap& withdrawn)
     {
         stoppedForBagSpace = false;
         incompleteItems = 0;
@@ -860,10 +1215,15 @@ namespace ReagentBank
                 continue;
 
             bool full = false;
-            uint32 withdrawn = WithdrawItemAmount(player, itemEntry, requestedAmount, full);
-            totalWithdrawn += withdrawn;
+            uint32 const itemWithdrawn = WithdrawItemAmount(player, itemEntry, requestedAmount, full, withdrawn);
 
-            if (withdrawn < requestedAmount)
+            uint32 updatedTotal = 0;
+            if (AddAmountChecked(totalWithdrawn, itemWithdrawn, updatedTotal))
+                totalWithdrawn = updatedTotal;
+            else
+                break;
+
+            if (itemWithdrawn < requestedAmount)
                 ++incompleteItems;
 
             if (full)
@@ -876,7 +1236,7 @@ namespace ReagentBank
         return totalWithdrawn;
     }
 
-    static uint32 WithdrawCategory(Player* player, uint32 category, bool& stoppedForBagSpace)
+    static uint32 WithdrawCategory(Player* player, uint32 category, bool& stoppedForBagSpace, ItemAmountMap& withdrawn)
     {
         stoppedForBagSpace = false;
 
@@ -907,7 +1267,14 @@ namespace ReagentBank
             stored.Amount = (*result)[2].Get<uint32>();
 
             bool full = false;
-            totalWithdrawn += WithdrawExact(player, stored, stored.Amount, full);
+            uint32 const itemWithdrawn = WithdrawExact(player, stored, stored.Amount, full, withdrawn);
+
+            uint32 updatedTotal = 0;
+            if (AddAmountChecked(totalWithdrawn, itemWithdrawn, updatedTotal))
+                totalWithdrawn = updatedTotal;
+            else
+                break;
+
             if (full)
             {
                 stoppedForBagSpace = true;
@@ -918,7 +1285,7 @@ namespace ReagentBank
         return totalWithdrawn;
     }
 
-    static uint32 WithdrawAll(Player* player, bool& stoppedForBagSpace)
+    static uint32 WithdrawAll(Player* player, bool& stoppedForBagSpace, ItemAmountMap& withdrawn)
     {
         stoppedForBagSpace = false;
 
@@ -926,7 +1293,14 @@ namespace ReagentBank
         for (CategoryInfo const& category : Categories)
         {
             bool full = false;
-            totalWithdrawn += WithdrawCategory(player, category.SubClass, full);
+            uint32 const categoryWithdrawn = WithdrawCategory(player, category.SubClass, full, withdrawn);
+
+            uint32 updatedTotal = 0;
+            if (AddAmountChecked(totalWithdrawn, categoryWithdrawn, updatedTotal))
+                totalWithdrawn = updatedTotal;
+            else
+                break;
+
             if (full)
             {
                 stoppedForBagSpace = true;
@@ -964,7 +1338,7 @@ namespace ReagentBank
 
     static void SendUsage(ChatHandler* handler)
     {
-        SendProtocol(handler, "RBANK:ERR:Usage: .rbank open | list <categoryId> [page] | deposit all|category <categoryId>|item <itemEntry> <amount>|items <itemEntry> <amount> [...] | withdraw all|category <categoryId>|item <itemEntry> <one|stack|all|exact <amount>>|needed <itemEntry> <amount> [...]");
+        SendError(handler, "Usage: .rbank open | list <categoryId> [page] [id|name|amount|amount_asc] | preview deposit all|category <categoryId> | check recipe <requestId> <itemEntry> <amountPerCraft> [...] | deposit all|category <categoryId>|item <itemEntry> <amount>|items <itemEntry> <amount> [...] | withdraw all|category <categoryId>|item <itemEntry> <one|stack|all|exact <amount>>|needed <itemEntry> <amount> [...]");
     }
 }
 
@@ -1029,10 +1403,97 @@ private:
             }
 
             uint32 page = 0;
-            if (tokens.size() >= 3)
-                ReagentBank::TryParseUInt32(tokens[2], page);
+            if (tokens.size() >= 3 && !ReagentBank::TryParseUInt32(tokens[2], page))
+                page = 0;
 
-            ReagentBank::SendCategory(handler, player, category, page);
+            ReagentBank::SortMode sortMode = ReagentBank::SortMode::Id;
+            if (tokens.size() >= 4)
+                sortMode = ReagentBank::ParseSortMode(tokens[3]);
+
+            ReagentBank::SendCategory(handler, player, category, page, sortMode);
+            return true;
+        }
+
+
+        if (command == "preview")
+        {
+            if (tokens.size() < 3 || ReagentBank::ToLower(tokens[1]) != "deposit")
+            {
+                ReagentBank::SendError(handler, "Usage: .rbank preview deposit all|category <categoryId>");
+                return true;
+            }
+
+            std::string scope = ReagentBank::ToLower(tokens[2]);
+
+            if (scope == "all")
+            {
+                ReagentBank::ItemAmountMap previewItems;
+                bool overflowed = false;
+                uint32 total = ReagentBank::CollectDepositPreview(player, 0, previewItems, overflowed);
+
+                ReagentBank::SendDepositPreview(handler, "all", 0, previewItems);
+
+                if (!total && overflowed)
+                    ReagentBank::SendError(handler, "No reagents can be deposited because the reagent bank cap was reached for the matching item(s).");
+
+                return true;
+            }
+
+            if (scope == "category")
+            {
+                if (tokens.size() < 4)
+                {
+                    ReagentBank::SendError(handler, "Usage: .rbank preview deposit category <categoryId>");
+                    return true;
+                }
+
+                uint32 category = 0;
+                if (!ReagentBank::TryParseUInt32(tokens[3], category) || !ReagentBank::IsCategory(category))
+                {
+                    ReagentBank::SendError(handler, "Unknown reagent category.");
+                    ReagentBank::SendRoot(handler, player);
+                    return true;
+                }
+
+                ReagentBank::ItemAmountMap previewItems;
+                bool overflowed = false;
+                uint32 total = ReagentBank::CollectDepositPreview(player, category, previewItems, overflowed);
+
+                ReagentBank::SendDepositPreview(handler, "category", category, previewItems);
+
+                if (!total && overflowed)
+                    ReagentBank::SendError(handler, "No reagents can be deposited because the reagent bank cap was reached for the matching item(s).");
+
+                return true;
+            }
+
+            ReagentBank::SendError(handler, "Usage: .rbank preview deposit all|category <categoryId>");
+            return true;
+        }
+
+        if (command == "check")
+        {
+            if (tokens.size() < 5 || ReagentBank::ToLower(tokens[1]) != "recipe")
+            {
+                ReagentBank::SendError(handler, "Usage: .rbank check recipe <requestId> <itemEntry> <amountPerCraft> [itemEntry amountPerCraft ...]");
+                return true;
+            }
+
+            uint32 requestId = 0;
+            if (!ReagentBank::TryParseUInt32(tokens[2], requestId))
+            {
+                ReagentBank::SendError(handler, "Invalid recipe check request id.");
+                return true;
+            }
+
+            std::vector<std::pair<uint32, uint32>> requestedItems;
+            if (!ReagentBank::TryParseItemAmountPairs(tokens, 3, requestedItems))
+            {
+                ReagentBank::SendError(handler, "Usage: .rbank check recipe <requestId> <itemEntry> <amountPerCraft> [itemEntry amountPerCraft ...]");
+                return true;
+            }
+
+            ReagentBank::SendRecipeCheck(handler, player, requestId, requestedItems);
             return true;
         }
 
@@ -1048,11 +1509,18 @@ private:
 
             if (scope == "all")
             {
-                std::map<uint32, uint32> deposited;
-                uint32 total = ReagentBank::Deposit(player, 0, deposited);
+                ReagentBank::ItemAmountMap deposited;
+                bool overflowed = false;
+                uint32 total = ReagentBank::Deposit(player, 0, deposited, overflowed);
+
+                ReagentBank::SendTransaction(handler, "deposit", deposited);
 
                 if (total)
-                    ReagentBank::SendOk(handler, Acore::StringFormat("Deposited {} reagent(s).", total));
+                    ReagentBank::SendOk(handler, overflowed
+                        ? Acore::StringFormat("Deposited {} reagent(s). Some stacks were skipped because the bank cap was reached.", total)
+                        : Acore::StringFormat("Deposited {} reagent(s).", total));
+                else if (overflowed)
+                    ReagentBank::SendError(handler, "No reagents were deposited because the reagent bank cap was reached for the matching item(s).");
                 else
                     ReagentBank::SendOk(handler, "No matching reagents were found in your bags.");
 
@@ -1076,11 +1544,18 @@ private:
                     return true;
                 }
 
-                std::map<uint32, uint32> deposited;
-                uint32 total = ReagentBank::Deposit(player, category, deposited);
+                ReagentBank::ItemAmountMap deposited;
+                bool overflowed = false;
+                uint32 total = ReagentBank::Deposit(player, category, deposited, overflowed);
+
+                ReagentBank::SendTransaction(handler, "deposit", deposited);
 
                 if (total)
-                    ReagentBank::SendOk(handler, Acore::StringFormat("Deposited {} reagent(s).", total));
+                    ReagentBank::SendOk(handler, overflowed
+                        ? Acore::StringFormat("Deposited {} reagent(s). Some stacks were skipped because the bank cap was reached.", total)
+                        : Acore::StringFormat("Deposited {} reagent(s).", total));
+                else if (overflowed)
+                    ReagentBank::SendError(handler, "No reagents were deposited because the reagent bank cap was reached for the matching item(s).");
                 else
                     ReagentBank::SendOk(handler, "No matching reagents were found in your bags.");
 
@@ -1107,11 +1582,18 @@ private:
                 std::vector<std::pair<uint32, uint32>> requestedItems;
                 requestedItems.emplace_back(itemEntry, amount);
 
-                std::map<uint32, uint32> deposited;
-                uint32 total = ReagentBank::DepositSpecificItems(player, requestedItems, deposited);
+                ReagentBank::ItemAmountMap deposited;
+                bool overflowed = false;
+                uint32 total = ReagentBank::DepositSpecificItems(player, requestedItems, deposited, overflowed);
+
+                ReagentBank::SendTransaction(handler, "deposit", deposited);
 
                 if (total)
-                    ReagentBank::SendOk(handler, Acore::StringFormat("Deposited {} reagent(s).", total));
+                    ReagentBank::SendOk(handler, overflowed
+                        ? Acore::StringFormat("Deposited {} reagent(s). Some amount was skipped because the bank cap was reached.", total)
+                        : Acore::StringFormat("Deposited {} reagent(s).", total));
+                else if (overflowed)
+                    ReagentBank::SendError(handler, "No reagents were deposited because the reagent bank cap was reached for the matching item(s).");
                 else
                     ReagentBank::SendOk(handler, "No matching reagents were found in your bags.");
 
@@ -1127,11 +1609,18 @@ private:
                     return true;
                 }
 
-                std::map<uint32, uint32> deposited;
-                uint32 total = ReagentBank::DepositSpecificItems(player, requestedItems, deposited);
+                ReagentBank::ItemAmountMap deposited;
+                bool overflowed = false;
+                uint32 total = ReagentBank::DepositSpecificItems(player, requestedItems, deposited, overflowed);
+
+                ReagentBank::SendTransaction(handler, "deposit", deposited);
 
                 if (total)
-                    ReagentBank::SendOk(handler, Acore::StringFormat("Deposited {} reagent leftover(s).", total));
+                    ReagentBank::SendOk(handler, overflowed
+                        ? Acore::StringFormat("Deposited {} reagent leftover(s). Some amount was skipped because the bank cap was reached.", total)
+                        : Acore::StringFormat("Deposited {} reagent leftover(s).", total));
+                else if (overflowed)
+                    ReagentBank::SendError(handler, "No leftover reagents were deposited because the reagent bank cap was reached for the matching item(s).");
                 else
                     ReagentBank::SendOk(handler, "No matching leftover reagents were found in your bags.");
 
@@ -1155,7 +1644,10 @@ private:
             if (scope == "all")
             {
                 bool stoppedForBagSpace = false;
-                uint32 total = ReagentBank::WithdrawAll(player, stoppedForBagSpace);
+                ReagentBank::ItemAmountMap withdrawn;
+                uint32 total = ReagentBank::WithdrawAll(player, stoppedForBagSpace, withdrawn);
+
+                ReagentBank::SendTransaction(handler, "withdraw", withdrawn);
 
                 if (total)
                     ReagentBank::SendOk(handler, stoppedForBagSpace
@@ -1185,7 +1677,10 @@ private:
                 }
 
                 bool stoppedForBagSpace = false;
-                uint32 total = ReagentBank::WithdrawCategory(player, category, stoppedForBagSpace);
+                ReagentBank::ItemAmountMap withdrawn;
+                uint32 total = ReagentBank::WithdrawCategory(player, category, stoppedForBagSpace, withdrawn);
+
+                ReagentBank::SendTransaction(handler, "withdraw", withdrawn);
 
                 if (total)
                     ReagentBank::SendOk(handler, stoppedForBagSpace
@@ -1240,7 +1735,9 @@ private:
                     if (tokens.size() >= 7)
                         ReagentBank::TryParseUInt32(tokens[6], returnPage);
 
-                    total = ReagentBank::WithdrawItemAmount(player, itemEntry, amount, stoppedForBagSpace);
+                    ReagentBank::ItemAmountMap withdrawn;
+                    total = ReagentBank::WithdrawItemAmount(player, itemEntry, amount, stoppedForBagSpace, withdrawn);
+                    ReagentBank::SendTransaction(handler, "withdraw", withdrawn);
                 }
                 else
                 {
@@ -1257,7 +1754,9 @@ private:
                     if (tokens.size() >= 6)
                         ReagentBank::TryParseUInt32(tokens[5], returnPage);
 
-                    total = ReagentBank::WithdrawItem(player, itemEntry, mode, stoppedForBagSpace);
+                    ReagentBank::ItemAmountMap withdrawn;
+                    total = ReagentBank::WithdrawItem(player, itemEntry, mode, stoppedForBagSpace, withdrawn);
+                    ReagentBank::SendTransaction(handler, "withdraw", withdrawn);
                 }
 
                 if (total)
@@ -1286,7 +1785,10 @@ private:
 
                 bool stoppedForBagSpace = false;
                 uint32 incompleteItems = 0;
-                uint32 total = ReagentBank::WithdrawSpecificItems(player, requestedItems, stoppedForBagSpace, incompleteItems);
+                ReagentBank::ItemAmountMap withdrawn;
+                uint32 total = ReagentBank::WithdrawSpecificItems(player, requestedItems, stoppedForBagSpace, incompleteItems, withdrawn);
+
+                ReagentBank::SendTransaction(handler, "withdraw", withdrawn);
 
                 if (total)
                 {
