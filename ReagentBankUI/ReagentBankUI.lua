@@ -1,4 +1,4 @@
--- ReagentBankUI custom skin v12
+-- ReagentBankUI custom skin v19
 -- WotLK 3.3.5a-safe: no Retail APIs, no Blizzard button templates in the main window.
 local ADDON_NAME = ...
 if not ADDON_NAME or ADDON_NAME == "" then
@@ -77,9 +77,241 @@ local SKIN = {
     rowEven = { 0.030, 0.034, 0.048, 0.18 },
     rowHover = { 1.00, 0.82, 0.32, 0.13 },
     blueText = { 0.62, 0.78, 1.00 },
+    titleText = { 1.00, 0.82, 0.28 },
+    buttonText = { 1.00, 0.86, 0.46 },
+    mutedText = { 0.78, 0.82, 0.88 },
+    disabledText = { 0.55, 0.55, 0.55 },
+    disabledBorder = { 0.22, 0.22, 0.24, 0.90 },
+    inputBg = { 0.035, 0.038, 0.052, 0.96 },
+    inputText = { 1.00, 0.92, 0.70 },
+    rowFill = { 1.00, 0.72, 0.22, 0.12 },
+    listHeaderBg = { 0.11, 0.085, 0.045, 0.72 },
+    paperIcon = { 1.00, 1.00, 1.00, 1.00 },
 }
 
+local DEFAULT_COLOR_THEME = "gold"
+
+local SKIN_THEME_ORDER = {
+    "gold",
+    "arcane",
+    "emerald",
+    "ruby",
+    "violet",
+    "slate",
+}
+
+local SKIN_THEMES = {
+    gold = {
+        label = "Classic Gold",
+        windowBg = { 0.025, 0.028, 0.040, 0.98 },
+        windowBorder = { 0.72, 0.52, 0.24, 0.95 },
+        panelBg = { 0.045, 0.050, 0.070, 0.86 },
+        panelBorder = { 0.23, 0.26, 0.31, 1.00 },
+        headerBg = { 0.10, 0.075, 0.035, 0.95 },
+        headerLine = { 0.95, 0.72, 0.28, 0.82 },
+        buttonBg = { 0.105, 0.085, 0.050, 0.94 },
+        buttonBorder = { 0.58, 0.42, 0.18, 0.95 },
+        buttonHover = { 1.00, 0.78, 0.28, 0.18 },
+        buttonDown = { 0.045, 0.036, 0.025, 0.98 },
+        closeBg = { 0.22, 0.045, 0.035, 0.95 },
+        closeBorder = { 0.86, 0.30, 0.18, 0.95 },
+        rowOdd = { 0.070, 0.075, 0.095, 0.35 },
+        rowEven = { 0.030, 0.034, 0.048, 0.18 },
+        rowHover = { 1.00, 0.82, 0.32, 0.13 },
+        blueText = { 0.62, 0.78, 1.00 },
+        titleText = { 1.00, 0.82, 0.28 },
+        buttonText = { 1.00, 0.86, 0.46 },
+        mutedText = { 0.78, 0.82, 0.88 },
+        disabledText = { 0.55, 0.55, 0.55 },
+        disabledBorder = { 0.22, 0.22, 0.24, 0.90 },
+        inputBg = { 0.035, 0.038, 0.052, 0.96 },
+        inputText = { 1.00, 0.92, 0.70 },
+        rowFill = { 1.00, 0.72, 0.22, 0.12 },
+        listHeaderBg = { 0.11, 0.085, 0.045, 0.72 },
+        paperIcon = { 1.00, 1.00, 1.00, 1.00 },
+    },
+    arcane = {
+        label = "Arcane Blue",
+        windowBg = { 0.018, 0.026, 0.050, 0.98 },
+        windowBorder = { 0.28, 0.56, 0.96, 0.95 },
+        panelBg = { 0.030, 0.052, 0.090, 0.86 },
+        panelBorder = { 0.16, 0.28, 0.44, 1.00 },
+        headerBg = { 0.025, 0.055, 0.100, 0.95 },
+        headerLine = { 0.38, 0.72, 1.00, 0.82 },
+        buttonBg = { 0.035, 0.070, 0.120, 0.94 },
+        buttonBorder = { 0.26, 0.56, 0.98, 0.95 },
+        buttonHover = { 0.35, 0.75, 1.00, 0.20 },
+        buttonDown = { 0.016, 0.033, 0.060, 0.98 },
+        closeBg = { 0.18, 0.040, 0.060, 0.95 },
+        closeBorder = { 0.88, 0.24, 0.34, 0.95 },
+        rowOdd = { 0.045, 0.065, 0.105, 0.36 },
+        rowEven = { 0.020, 0.034, 0.062, 0.20 },
+        rowHover = { 0.35, 0.75, 1.00, 0.14 },
+        blueText = { 0.62, 0.84, 1.00 },
+        titleText = { 0.66, 0.86, 1.00 },
+        buttonText = { 0.78, 0.91, 1.00 },
+        mutedText = { 0.72, 0.82, 0.92 },
+        disabledText = { 0.48, 0.55, 0.62 },
+        disabledBorder = { 0.16, 0.20, 0.28, 0.90 },
+        inputBg = { 0.018, 0.032, 0.058, 0.96 },
+        inputText = { 0.80, 0.93, 1.00 },
+        rowFill = { 0.35, 0.75, 1.00, 0.13 },
+        listHeaderBg = { 0.025, 0.060, 0.105, 0.72 },
+        paperIcon = { 0.70, 0.88, 1.00, 1.00 },
+    },
+    emerald = {
+        label = "Emerald",
+        windowBg = { 0.018, 0.040, 0.030, 0.98 },
+        windowBorder = { 0.30, 0.82, 0.48, 0.95 },
+        panelBg = { 0.028, 0.066, 0.048, 0.86 },
+        panelBorder = { 0.14, 0.32, 0.22, 1.00 },
+        headerBg = { 0.025, 0.080, 0.048, 0.95 },
+        headerLine = { 0.42, 0.96, 0.58, 0.82 },
+        buttonBg = { 0.032, 0.088, 0.050, 0.94 },
+        buttonBorder = { 0.28, 0.74, 0.42, 0.95 },
+        buttonHover = { 0.40, 1.00, 0.58, 0.18 },
+        buttonDown = { 0.014, 0.044, 0.026, 0.98 },
+        closeBg = { 0.20, 0.045, 0.035, 0.95 },
+        closeBorder = { 0.86, 0.30, 0.18, 0.95 },
+        rowOdd = { 0.042, 0.082, 0.058, 0.36 },
+        rowEven = { 0.020, 0.044, 0.032, 0.20 },
+        rowHover = { 0.40, 1.00, 0.58, 0.13 },
+        blueText = { 0.66, 1.00, 0.78 },
+        titleText = { 0.66, 1.00, 0.62 },
+        buttonText = { 0.82, 1.00, 0.72 },
+        mutedText = { 0.72, 0.88, 0.78 },
+        disabledText = { 0.48, 0.58, 0.50 },
+        disabledBorder = { 0.16, 0.24, 0.18, 0.90 },
+        inputBg = { 0.018, 0.040, 0.028, 0.96 },
+        inputText = { 0.84, 1.00, 0.76 },
+        rowFill = { 0.42, 1.00, 0.58, 0.12 },
+        listHeaderBg = { 0.030, 0.080, 0.050, 0.72 },
+        paperIcon = { 0.74, 1.00, 0.78, 1.00 },
+    },
+    ruby = {
+        label = "Ruby",
+        windowBg = { 0.048, 0.018, 0.024, 0.98 },
+        windowBorder = { 0.92, 0.30, 0.30, 0.95 },
+        panelBg = { 0.078, 0.030, 0.038, 0.86 },
+        panelBorder = { 0.36, 0.16, 0.18, 1.00 },
+        headerBg = { 0.105, 0.030, 0.036, 0.95 },
+        headerLine = { 1.00, 0.42, 0.36, 0.82 },
+        buttonBg = { 0.112, 0.038, 0.044, 0.94 },
+        buttonBorder = { 0.86, 0.30, 0.26, 0.95 },
+        buttonHover = { 1.00, 0.40, 0.34, 0.18 },
+        buttonDown = { 0.058, 0.018, 0.022, 0.98 },
+        closeBg = { 0.28, 0.040, 0.034, 0.95 },
+        closeBorder = { 1.00, 0.42, 0.34, 0.95 },
+        rowOdd = { 0.090, 0.045, 0.050, 0.36 },
+        rowEven = { 0.050, 0.022, 0.028, 0.20 },
+        rowHover = { 1.00, 0.38, 0.34, 0.13 },
+        blueText = { 1.00, 0.62, 0.62 },
+        titleText = { 1.00, 0.64, 0.54 },
+        buttonText = { 1.00, 0.78, 0.66 },
+        mutedText = { 0.92, 0.72, 0.72 },
+        disabledText = { 0.62, 0.48, 0.48 },
+        disabledBorder = { 0.28, 0.16, 0.16, 0.90 },
+        inputBg = { 0.052, 0.022, 0.028, 0.96 },
+        inputText = { 1.00, 0.82, 0.72 },
+        rowFill = { 1.00, 0.42, 0.36, 0.12 },
+        listHeaderBg = { 0.105, 0.034, 0.038, 0.72 },
+        paperIcon = { 1.00, 0.72, 0.66, 1.00 },
+    },
+    violet = {
+        label = "Violet",
+        windowBg = { 0.036, 0.024, 0.056, 0.98 },
+        windowBorder = { 0.68, 0.42, 1.00, 0.95 },
+        panelBg = { 0.058, 0.040, 0.086, 0.86 },
+        panelBorder = { 0.28, 0.20, 0.40, 1.00 },
+        headerBg = { 0.075, 0.040, 0.115, 0.95 },
+        headerLine = { 0.78, 0.52, 1.00, 0.82 },
+        buttonBg = { 0.078, 0.046, 0.120, 0.94 },
+        buttonBorder = { 0.62, 0.36, 0.98, 0.95 },
+        buttonHover = { 0.78, 0.52, 1.00, 0.18 },
+        buttonDown = { 0.038, 0.022, 0.064, 0.98 },
+        closeBg = { 0.22, 0.045, 0.035, 0.95 },
+        closeBorder = { 0.86, 0.30, 0.18, 0.95 },
+        rowOdd = { 0.070, 0.052, 0.104, 0.36 },
+        rowEven = { 0.036, 0.026, 0.060, 0.20 },
+        rowHover = { 0.78, 0.52, 1.00, 0.13 },
+        blueText = { 0.86, 0.72, 1.00 },
+        titleText = { 0.86, 0.70, 1.00 },
+        buttonText = { 0.93, 0.84, 1.00 },
+        mutedText = { 0.82, 0.74, 0.90 },
+        disabledText = { 0.54, 0.48, 0.60 },
+        disabledBorder = { 0.22, 0.18, 0.28, 0.90 },
+        inputBg = { 0.038, 0.026, 0.060, 0.96 },
+        inputText = { 0.94, 0.86, 1.00 },
+        rowFill = { 0.78, 0.52, 1.00, 0.12 },
+        listHeaderBg = { 0.075, 0.045, 0.110, 0.72 },
+        paperIcon = { 0.90, 0.78, 1.00, 1.00 },
+    },
+    slate = {
+        label = "Dark Slate",
+        windowBg = { 0.026, 0.030, 0.034, 0.98 },
+        windowBorder = { 0.52, 0.62, 0.68, 0.95 },
+        panelBg = { 0.044, 0.050, 0.056, 0.86 },
+        panelBorder = { 0.24, 0.28, 0.32, 1.00 },
+        headerBg = { 0.048, 0.056, 0.064, 0.95 },
+        headerLine = { 0.68, 0.78, 0.84, 0.82 },
+        buttonBg = { 0.060, 0.068, 0.078, 0.94 },
+        buttonBorder = { 0.48, 0.58, 0.66, 0.95 },
+        buttonHover = { 0.72, 0.84, 0.92, 0.16 },
+        buttonDown = { 0.030, 0.034, 0.040, 0.98 },
+        closeBg = { 0.20, 0.045, 0.040, 0.95 },
+        closeBorder = { 0.84, 0.32, 0.22, 0.95 },
+        rowOdd = { 0.065, 0.072, 0.080, 0.35 },
+        rowEven = { 0.034, 0.038, 0.044, 0.18 },
+        rowHover = { 0.72, 0.84, 0.92, 0.12 },
+        blueText = { 0.78, 0.88, 0.94 },
+        titleText = { 0.84, 0.92, 0.96 },
+        buttonText = { 0.90, 0.95, 0.98 },
+        mutedText = { 0.74, 0.80, 0.84 },
+        disabledText = { 0.48, 0.52, 0.56 },
+        disabledBorder = { 0.20, 0.22, 0.24, 0.90 },
+        inputBg = { 0.034, 0.038, 0.044, 0.96 },
+        inputText = { 0.92, 0.96, 0.98 },
+        rowFill = { 0.72, 0.84, 0.92, 0.10 },
+        listHeaderBg = { 0.052, 0.060, 0.070, 0.72 },
+        paperIcon = { 0.88, 0.94, 0.98, 1.00 },
+    },
+}
+
+local function CopyColor(color)
+    if type(color) ~= "table" then
+        return color
+    end
+
+    return { color[1], color[2], color[3], color[4] }
+end
+
+local function NormalizeColorThemeKey(themeKey)
+    themeKey = string.lower(tostring(themeKey or DEFAULT_COLOR_THEME))
+
+    if SKIN_THEMES[themeKey] then
+        return themeKey
+    end
+
+    return DEFAULT_COLOR_THEME
+end
+
+local function ApplyColorThemeToSkin(themeKey)
+    themeKey = NormalizeColorThemeKey(themeKey)
+
+    local theme = SKIN_THEMES[themeKey] or SKIN_THEMES[DEFAULT_COLOR_THEME]
+    for key, value in pairs(theme) do
+        if key ~= "label" then
+            SKIN[key] = CopyColor(value)
+        end
+    end
+
+    return themeKey
+end
+
 local DEFAULT_SCALE = 0.92
+local MAIN_FRAME_WIDTH = 740
+local MAIN_FRAME_HEIGHT = 600
+local QUICK_WITHDRAW_WIDTH = 470
 local ROW_COUNT = 15
 local ROW_HEIGHT = 24
 local ROW_SPACING = 2
@@ -89,8 +321,12 @@ local ITEM_CACHE_REFRESH_INTERVAL = 0.35
 local ITEM_CACHE_REFRESH_TIMEOUT = 8.0
 local AUTO_DEPOSIT_AFTER_CLOSE_DELAY = 0.80
 local AUTO_DEPOSIT_PREP_EXPIRE_SECONDS = 300
+local TRANSACTION_MAX_PAIRS_PER_COMMAND = 10
+local TRANSACTION_CHAT_ITEM_LIMIT = 6
 local TRADE_SKILL_PREPARE_COUNT_MIN = 1
 local TRADE_SKILL_PREPARE_COUNT_MAX = 999
+local DEPOSIT_PREVIEW_ROW_COUNT = 10
+local TRADE_SKILL_CHECK_TIMEOUT = 2.0
 
 -- Main window top action button placement.
 -- Change these to move/resize Deposit All, Withdraw All, and Refresh.
@@ -98,9 +334,12 @@ local ROOT_BUTTON_ROW_X = 18
 local ROOT_BUTTON_ROW_Y = -60
 local ROOT_ACTION_BUTTON_WIDTH = 118
 local ROOT_REFRESH_BUTTON_WIDTH = 96
+local ROOT_SORT_BUTTON_WIDTH = 98
+local ROOT_PREVIEW_TOGGLE_BUTTON_WIDTH = 112
 local ROOT_BUTTON_HEIGHT = 24
 local ROOT_BUTTON_GAP = 8
 local ROOT_HELP_TEXT_GAP = 12
+local UNDO_BUTTON_WIDTH = 128
 
 -- Category/detail navigation button placement.
 -- Change these to move/resize Categories, Deposit Category, Withdraw Category, Prev, and Next.
@@ -247,10 +486,116 @@ local function ParseItemIdFromLink(link)
     return tonumber(itemId)
 end
 
+local function AddAmountToMap(map, itemEntry, amount)
+    if type(map) ~= "table" then
+        return false
+    end
+
+    itemEntry = tonumber(itemEntry)
+    amount = math.floor(tonumber(amount) or 0)
+
+    if not itemEntry or itemEntry <= 0 or amount <= 0 then
+        return false
+    end
+
+    itemEntry = math.floor(itemEntry)
+    map[itemEntry] = (tonumber(map[itemEntry]) or 0) + amount
+    return true
+end
+
+local function AmountMapHasItems(map)
+    if type(map) ~= "table" then
+        return false
+    end
+
+    for itemEntry, amount in pairs(map) do
+        if tonumber(itemEntry) and (tonumber(amount) or 0) > 0 then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function AmountMapTotal(map)
+    local total = 0
+
+    if type(map) ~= "table" then
+        return total
+    end
+
+    for _, amount in pairs(map) do
+        total = total + math.max(0, math.floor(tonumber(amount) or 0))
+    end
+
+    return total
+end
+
+local function BuildSortedItemsFromAmountMap(map)
+    local items = {}
+
+    if type(map) ~= "table" then
+        return items
+    end
+
+    for itemEntry, amount in pairs(map) do
+        itemEntry = tonumber(itemEntry)
+        amount = math.floor(tonumber(amount) or 0)
+
+        if itemEntry and itemEntry > 0 and amount > 0 then
+            table.insert(items, {
+                entry = math.floor(itemEntry),
+                amount = amount,
+            })
+        end
+    end
+
+    table.sort(items, function(a, b)
+        return (tonumber(a.entry) or 0) < (tonumber(b.entry) or 0)
+    end)
+
+    return items
+end
+
 local function PrintAddon(message)
     if DEFAULT_CHAT_FRAME then
         DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99ReagentBankUI|r " .. tostring(message or ""))
     end
+end
+
+local function GetItemChatText(itemEntry)
+    local icon, name, link = GetItemDisplay(itemEntry)
+
+    if link and link ~= "" then
+        return link
+    end
+
+    return name or ("Item #" .. tostring(itemEntry or 0))
+end
+
+local function BuildItemAmountChatText(itemEntry, amount)
+    amount = math.floor(tonumber(amount) or 0)
+    return tostring(amount) .. "x " .. GetItemChatText(itemEntry)
+end
+
+local function SafeTransactionSource(source)
+    source = string.lower(tostring(source or "manual"))
+
+    if source == "profession" or source == "reverse" or source == "manual" then
+        return source
+    end
+
+    return "manual"
+end
+
+local function SafeTransactionLabel(label)
+    label = Trim(label or "")
+
+    if label == "" then
+        return nil
+    end
+
+    return label
 end
 
 local function SafeDate()
@@ -259,6 +604,383 @@ local function SafeDate()
     end
 
     return "now"
+end
+
+local function NormalizeItemSortMode(mode)
+    mode = string.lower(tostring(mode or "id"))
+
+    if mode == "name" or mode == "alpha" or mode == "alphabetical" then
+        return "name"
+    end
+
+    if mode == "amount" or mode == "amount_desc" or mode == "count" or mode == "count_desc" then
+        return "amount"
+    end
+
+    if mode == "amount_asc" or mode == "count_asc" then
+        return "amount_asc"
+    end
+
+    return "id"
+end
+
+local function NormalizeCategorySortMode(mode)
+    mode = string.lower(tostring(mode or "order"))
+
+    if mode == "name" then
+        return "name"
+    end
+
+    if mode == "amount" or mode == "amount_desc" or mode == "total" then
+        return "amount"
+    end
+
+    if mode == "types" or mode == "types_desc" then
+        return "types"
+    end
+
+    return "order"
+end
+
+local function ItemSortLabel(mode)
+    mode = NormalizeItemSortMode(mode)
+
+    if mode == "name" then
+        return "Sort: Name"
+    elseif mode == "amount" then
+        return "Sort: Most"
+    elseif mode == "amount_asc" then
+        return "Sort: Least"
+    end
+
+    return "Sort: ID"
+end
+
+local function CategorySortLabel(mode)
+    mode = NormalizeCategorySortMode(mode)
+
+    if mode == "name" then
+        return "Sort: Name"
+    elseif mode == "amount" then
+        return "Sort: Total"
+    elseif mode == "types" then
+        return "Sort: Types"
+    end
+
+    return "Sort: Default"
+end
+
+local function CycleItemSortMode(mode)
+    mode = NormalizeItemSortMode(mode)
+
+    if mode == "id" then
+        return "name"
+    elseif mode == "name" then
+        return "amount"
+    elseif mode == "amount" then
+        return "amount_asc"
+    end
+
+    return "id"
+end
+
+local function CycleCategorySortMode(mode)
+    mode = NormalizeCategorySortMode(mode)
+
+    if mode == "order" then
+        return "amount"
+    elseif mode == "amount" then
+        return "types"
+    elseif mode == "types" then
+        return "name"
+    end
+
+    return "order"
+end
+
+local function TableValueCount(tbl)
+    local count = 0
+    for _ in pairs(tbl or {}) do
+        count = count + 1
+    end
+    return count
+end
+
+local function SetTextureColor(texture, color, alphaOverride)
+    if not texture or type(color) ~= "table" then
+        return
+    end
+
+    texture:SetVertexColor(color[1] or 1, color[2] or 1, color[3] or 1, alphaOverride or color[4] or 1)
+end
+
+local function SetFontColor(fontString, color)
+    if not fontString or type(color) ~= "table" then
+        return
+    end
+
+    fontString:SetTextColor(color[1] or 1, color[2] or 1, color[3] or 1, color[4] or 1)
+end
+
+local function SetFrameBackdropColors(frame, bgColor, borderColor, alphaOverride)
+    if not frame then
+        return
+    end
+
+    if frame.SetBackdropColor and type(bgColor) == "table" then
+        frame:SetBackdropColor(bgColor[1] or 0, bgColor[2] or 0, bgColor[3] or 0, alphaOverride or bgColor[4] or 1)
+    end
+
+    if frame.SetBackdropBorderColor and type(borderColor) == "table" then
+        frame:SetBackdropBorderColor(borderColor[1] or 1, borderColor[2] or 1, borderColor[3] or 1, borderColor[4] or 1)
+    end
+end
+
+function RB:GetColorThemeKey()
+    ReagentBankUIDB = ReagentBankUIDB or {}
+    ReagentBankUIDB.colorTheme = NormalizeColorThemeKey(ReagentBankUIDB.colorTheme)
+    return ReagentBankUIDB.colorTheme
+end
+
+function RB:GetColorThemeLabel(themeKey)
+    themeKey = NormalizeColorThemeKey(themeKey)
+    local theme = SKIN_THEMES[themeKey]
+    return theme and theme.label or "Classic Gold"
+end
+
+function RB:ApplySavedColorTheme()
+    ReagentBankUIDB = ReagentBankUIDB or {}
+    ReagentBankUIDB.colorTheme = ApplyColorThemeToSkin(ReagentBankUIDB.colorTheme)
+    return ReagentBankUIDB.colorTheme
+end
+
+function RB:SetColorTheme(themeKey, silent)
+    ReagentBankUIDB = ReagentBankUIDB or {}
+    themeKey = ApplyColorThemeToSkin(themeKey)
+    ReagentBankUIDB.colorTheme = themeKey
+
+    self:ApplySkin()
+    self:UpdateColorSettingsFrame()
+
+    if not silent then
+        local label = self:GetColorThemeLabel(themeKey)
+        PrintAddon("color schema set to " .. label .. ".")
+        self:Status("Color schema set to " .. label .. ".", 0.82, 0.82, 0.82)
+    end
+end
+
+function RB:CycleColorTheme()
+    local current = self:GetColorThemeKey()
+    local nextKey = SKIN_THEME_ORDER[1] or DEFAULT_COLOR_THEME
+
+    for index, themeKey in ipairs(SKIN_THEME_ORDER) do
+        if themeKey == current then
+            nextKey = SKIN_THEME_ORDER[index + 1] or SKIN_THEME_ORDER[1] or DEFAULT_COLOR_THEME
+            break
+        end
+    end
+
+    self:SetColorTheme(nextKey)
+end
+
+function RB:StyleButton(button)
+    if not button then
+        return
+    end
+
+    SetFrameBackdropColors(button, SKIN.buttonBg, SKIN.buttonBorder)
+
+    if button.shine then
+        SetTextureColor(button.shine, SKIN.headerLine, 0.15)
+    end
+
+    if button.hover then
+        SetTextureColor(button.hover, SKIN.buttonHover)
+    end
+
+    if button.label then
+        SetFontColor(button.label, SKIN.buttonText)
+    end
+end
+
+function RB:StyleCloseButton(button)
+    if not button then
+        return
+    end
+
+    SetFrameBackdropColors(button, SKIN.closeBg, SKIN.closeBorder)
+
+    if button.hover then
+        button.hover:SetVertexColor(1.00, 0.18, 0.12, 0.25)
+    end
+
+    if button.label then
+        button.label:SetTextColor(1.00, 0.76, 0.58)
+    end
+end
+
+function RB:StyleEditBox(box)
+    if not box then
+        return
+    end
+
+    SetFrameBackdropColors(box, SKIN.inputBg, SKIN.buttonBorder)
+    if box.SetTextColor then
+        box:SetTextColor(SKIN.inputText[1], SKIN.inputText[2], SKIN.inputText[3], SKIN.inputText[4] or 1)
+    end
+end
+
+function RB:StylePaperDollButton()
+    local button = self.paperDollButton
+    if not button then
+        return
+    end
+
+    if button.bg then
+        button.bg:SetVertexColor(SKIN.buttonBg[1], SKIN.buttonBg[2], SKIN.buttonBg[3], 0.95)
+    end
+
+    if button.icon then
+        SetTextureColor(button.icon, SKIN.paperIcon or { 1, 1, 1, 1 })
+    end
+
+    if button.border then
+        SetTextureColor(button.border, SKIN.windowBorder)
+    end
+
+    local highlight = button.GetHighlightTexture and button:GetHighlightTexture()
+    if highlight then
+        SetTextureColor(highlight, SKIN.buttonHover)
+    end
+end
+
+function RB:ApplySkin()
+    local f = self.frame
+
+    if f then
+        self:MakeBackdrop(f, 0.98)
+
+        SetFrameBackdropColors(f.header, SKIN.headerBg, SKIN.windowBorder)
+        SetTextureColor(f.headerGlow, SKIN.headerLine, 0.10)
+        SetTextureColor(f.headerLine, SKIN.headerLine)
+        SetFontColor(f.title, SKIN.titleText)
+        SetFontColor(f.modeText, SKIN.mutedText)
+
+        self:StyleCloseButton(f.close)
+
+        local buttons = {
+            f.rootDeposit, f.rootWithdraw, f.refresh, f.sortMode, f.previewToggle,
+            f.back, f.catDeposit, f.catWithdraw, f.prev, f.next,
+            f.withdrawOne, f.withdrawStack, f.withdrawItemAll, f.withdrawExact, f.detailBack,
+            f.undoLast, f.quickWithdrawButton, f.quickWithdrawAll, f.quickWithdrawCancel,
+        }
+
+        if f.depositPreview then
+            table.insert(buttons, f.depositPreview.confirm)
+            table.insert(buttons, f.depositPreview.cancel)
+        end
+
+        for _, button in ipairs(buttons) do
+            self:StyleButton(button)
+        end
+
+        self:StyleCloseButton(f.quickWithdrawClose)
+        if f.depositPreview then
+            self:StyleCloseButton(f.depositPreview.close)
+        end
+
+        self:StyleEditBox(f.exactBox)
+        self:StyleEditBox(f.quickWithdrawBox)
+
+        self:MakeBackdrop(f.list, 0.78, true)
+        self:MakeBackdrop(f.detail, 0.78, true)
+        self:MakeBackdrop(f.footer, 0.58, true)
+        self:MakeBackdrop(f.quickWithdraw, 0.98, true)
+        if f.depositPreview then
+            self:MakeBackdrop(f.depositPreview, 0.98, true)
+        end
+
+        SetFrameBackdropColors(f.detailIconBorder, { 0.02, 0.02, 0.03, 0.90 }, SKIN.buttonBorder)
+
+        if f.listHeader then
+            SetTextureColor(f.listHeader.bg, SKIN.listHeaderBg)
+            SetTextureColor(f.listHeader.line, SKIN.headerLine, 0.70)
+        end
+
+        SetFontColor(f.headerName, SKIN.buttonText)
+        SetFontColor(f.headerCount, SKIN.buttonText)
+        SetFontColor(f.pageText, SKIN.mutedText)
+        SetFontColor(f.helpText, SKIN.mutedText)
+        SetFontColor(f.status, SKIN.mutedText)
+        SetFontColor(f.detailName, SKIN.titleText)
+        SetFontColor(f.detailHint, SKIN.mutedText)
+        SetFontColor(f.exactLabel, SKIN.buttonText)
+        SetFontColor(f.quickWithdrawTitle, SKIN.titleText)
+        SetFontColor(f.quickWithdrawName, SKIN.buttonText)
+        SetFontColor(f.quickWithdrawStored, SKIN.mutedText)
+        SetFontColor(f.quickWithdrawLabel, SKIN.buttonText)
+        SetFontColor(f.quickWithdrawHint, SKIN.mutedText)
+
+        if f.depositPreview then
+            SetFontColor(f.depositPreview.title, SKIN.titleText)
+            SetFontColor(f.depositPreview.summary, SKIN.mutedText)
+            if f.depositPreview.rows then
+                for _, row in ipairs(f.depositPreview.rows) do
+                    SetFontColor(row.name or row.text, SKIN.buttonText)
+                    SetFontColor(row.count, SKIN.blueText)
+                end
+            end
+        end
+
+        if f.rows then
+            for index, row in ipairs(f.rows) do
+                if (index % 2) == 0 then
+                    SetTextureColor(row.bg, SKIN.rowEven)
+                else
+                    SetTextureColor(row.bg, SKIN.rowOdd)
+                end
+                SetTextureColor(row.fill, SKIN.rowFill)
+                SetTextureColor(row.hover, SKIN.rowHover)
+                SetFontColor(row.count, SKIN.blueText)
+            end
+        end
+    end
+
+    self:StylePaperDollButton()
+
+    if self.tradeSkillButton then
+        self:StyleButton(self.tradeSkillButton)
+    end
+
+    if self.tradeSkillMinusButton then
+        self:StyleButton(self.tradeSkillMinusButton)
+    end
+
+    if self.tradeSkillPlusButton then
+        self:StyleButton(self.tradeSkillPlusButton)
+    end
+
+    if self.tradeSkillQuantityBox then
+        self:StyleEditBox(self.tradeSkillQuantityBox)
+    end
+
+    SetFontColor(self.tradeSkillQuantityLabel, SKIN.buttonText)
+    SetFontColor(self.tradeSkillStatsText, SKIN.mutedText)
+
+    if self.colorSettingsFrame then
+        local settings = self.colorSettingsFrame
+        self:MakeBackdrop(settings, 0.98, true)
+        SetFontColor(settings.title, SKIN.titleText)
+        SetFontColor(settings.note, SKIN.mutedText)
+        self:StyleCloseButton(settings.close)
+        if settings.themeButtons then
+            for _, button in ipairs(settings.themeButtons) do
+                self:StyleButton(button)
+            end
+        end
+        self:StyleButton(settings.cycle)
+        self:StyleButton(settings.reset)
+    end
 end
 
 function RB:MakeBackdrop(frame, alpha, panel)
@@ -283,7 +1005,7 @@ function RB:SetButtonEnabled(button, enabled)
         button:Enable()
         button:SetAlpha(1.0)
         if button.label then
-            button.label:SetTextColor(1.00, 0.86, 0.46)
+            SetFontColor(button.label, SKIN.buttonText)
         end
         if button.SetBackdropBorderColor then
             button:SetBackdropBorderColor(SKIN.buttonBorder[1], SKIN.buttonBorder[2], SKIN.buttonBorder[3], SKIN.buttonBorder[4])
@@ -292,10 +1014,10 @@ function RB:SetButtonEnabled(button, enabled)
         button:Disable()
         button:SetAlpha(0.48)
         if button.label then
-            button.label:SetTextColor(0.55, 0.55, 0.55)
+            SetFontColor(button.label, SKIN.disabledText)
         end
         if button.SetBackdropBorderColor then
-            button:SetBackdropBorderColor(0.22, 0.22, 0.24, 0.90)
+            button:SetBackdropBorderColor(SKIN.disabledBorder[1], SKIN.disabledBorder[2], SKIN.disabledBorder[3], SKIN.disabledBorder[4])
         end
     end
 end
@@ -390,6 +1112,11 @@ function RB:RefreshItemInfoIfNeeded()
         return
     end
 
+    if self.depositPreview and self.frame.depositPreview and self.frame.depositPreview:IsShown() then
+        self:ShowDepositPreview(self.depositPreview)
+        return
+    end
+
     if self.currentView == "category" and self.currentCategoryId then
         self:RenderCategory(true)
         return
@@ -437,17 +1164,189 @@ function RB:OnUpdate(elapsed)
     end
 end
 
-function RB:SendServerCommand(command)
+function RB:QueueTransactionContext(action, source, label)
+    action = self:NormalizeTransactionAction(action)
+    if not action then
+        return
+    end
+
+    self.pendingTransactionContexts = self.pendingTransactionContexts or {}
+    table.insert(self.pendingTransactionContexts, {
+        action = action,
+        source = SafeTransactionSource(source),
+        label = SafeTransactionLabel(label),
+        queuedAt = GetTime(),
+    })
+
+    while #self.pendingTransactionContexts > 20 do
+        table.remove(self.pendingTransactionContexts, 1)
+    end
+end
+
+function RB:TakeTransactionContext(action)
+    action = self:NormalizeTransactionAction(action)
+    if not action or not self.pendingTransactionContexts then
+        return nil
+    end
+
+    local now = GetTime()
+    local index = 1
+    while index <= #self.pendingTransactionContexts do
+        local context = self.pendingTransactionContexts[index]
+
+        if context and context.queuedAt and now - context.queuedAt > 12.0 then
+            table.remove(self.pendingTransactionContexts, index)
+        elseif context and context.action == action then
+            table.remove(self.pendingTransactionContexts, index)
+            return context
+        else
+            index = index + 1
+        end
+    end
+
+    return nil
+end
+
+function RB:SendServerCommand(command, transactionContext)
     command = Trim(command or "")
 
     if command == "" then
         command = "open"
     end
 
+    if transactionContext then
+        self:QueueTransactionContext(
+            transactionContext.action,
+            transactionContext.source,
+            transactionContext.label
+        )
+    end
+
     SendChatMessage(COMMAND_PREFIX .. " " .. command, "SAY")
 end
 
+function RB:GetItemSortMode()
+    ReagentBankUIDB = ReagentBankUIDB or {}
+    ReagentBankUIDB.sortMode = NormalizeItemSortMode(ReagentBankUIDB.sortMode)
+    return ReagentBankUIDB.sortMode
+end
+
+function RB:GetCategorySortMode()
+    ReagentBankUIDB = ReagentBankUIDB or {}
+    ReagentBankUIDB.categorySortMode = NormalizeCategorySortMode(ReagentBankUIDB.categorySortMode)
+    return ReagentBankUIDB.categorySortMode
+end
+
+function RB:IsDepositPreviewEnabled()
+    ReagentBankUIDB = ReagentBankUIDB or {}
+
+    if ReagentBankUIDB.depositPreviewEnabled == nil then
+        ReagentBankUIDB.depositPreviewEnabled = true
+    end
+
+    return ReagentBankUIDB.depositPreviewEnabled ~= false
+end
+
+function RB:SetDepositPreviewEnabled(enabled, silent)
+    ReagentBankUIDB = ReagentBankUIDB or {}
+    ReagentBankUIDB.depositPreviewEnabled = enabled and true or false
+
+    if not ReagentBankUIDB.depositPreviewEnabled then
+        self:HideDepositPreview()
+    end
+
+    self:UpdatePreviewToggleButton()
+
+    if not silent then
+        PrintAddon("deposit preview confirmation " .. (ReagentBankUIDB.depositPreviewEnabled and "enabled." or "disabled."))
+        self:Status("Deposit preview confirmation " .. (ReagentBankUIDB.depositPreviewEnabled and "enabled." or "disabled."), 0.82, 0.82, 0.82)
+    end
+end
+
+function RB:ToggleDepositPreviewEnabled()
+    self:SetDepositPreviewEnabled(not self:IsDepositPreviewEnabled())
+end
+
+function RB:UpdatePreviewToggleButton()
+    if not self.frame or not self.frame.previewToggle then
+        return
+    end
+
+    if self:IsDepositPreviewEnabled() then
+        self.frame.previewToggle:SetText("Preview: On")
+        self.frame.previewToggle.tooltipText = "Deposit All and Deposit Category will show a confirmation preview first."
+    else
+        self.frame.previewToggle:SetText("Preview: Off")
+        self.frame.previewToggle.tooltipText = "Deposit All and Deposit Category will deposit immediately."
+    end
+end
+
+function RB:UpdateSortButton()
+    if not self.frame or not self.frame.sortMode then
+        return
+    end
+
+    if self.currentView == "root" then
+        self.frame.sortMode:SetText(CategorySortLabel(self:GetCategorySortMode()))
+        self.frame.sortMode.tooltipText = "Cycle category sorting: default order, total amount, type count, or name."
+    else
+        self.frame.sortMode:SetText(ItemSortLabel(self:GetItemSortMode()))
+        self.frame.sortMode.tooltipText = "Cycle item sorting: item ID, name, most stored, or least stored."
+    end
+end
+
+function RB:CycleSortMode()
+    ReagentBankUIDB = ReagentBankUIDB or {}
+
+    if self.currentView == "root" or not self.currentCategoryId then
+        ReagentBankUIDB.categorySortMode = CycleCategorySortMode(ReagentBankUIDB.categorySortMode)
+        self:RenderRoot()
+        return
+    end
+
+    ReagentBankUIDB.sortMode = CycleItemSortMode(ReagentBankUIDB.sortMode)
+    self:RequestCategory(self.currentCategoryId, 0)
+end
+
+function RB:BuildItemAmountCommands(prefix, items, maxPairs)
+    local commands = {}
+    local current = prefix
+    local pairsInCurrent = 0
+    maxPairs = math.max(1, tonumber(maxPairs) or TRANSACTION_MAX_PAIRS_PER_COMMAND)
+
+    for _, item in ipairs(items or {}) do
+        local itemEntry = tonumber(item.itemEntry or item.entry)
+        local amount = tonumber(item.amount) or 0
+
+        if itemEntry and itemEntry > 0 and amount > 0 then
+            if pairsInCurrent >= maxPairs then
+                table.insert(commands, current)
+                current = prefix
+                pairsInCurrent = 0
+            end
+
+            current = current .. " " .. tostring(math.floor(itemEntry)) .. " " .. tostring(math.floor(amount))
+            pairsInCurrent = pairsInCurrent + 1
+        end
+    end
+
+    if pairsInCurrent > 0 then
+        table.insert(commands, current)
+    end
+
+    return commands
+end
+
+function RB:SendItemAmountCommands(prefix, items, maxPairs, transactionContext)
+    local commands = self:BuildItemAmountCommands(prefix, items, maxPairs)
+    for _, command in ipairs(commands) do
+        self:SendServerCommand(command, transactionContext)
+    end
+    return #commands
+end
+
 function RB:RequestRoot()
+    self:HideDepositPreview()
     self.pendingRefresh = nil
     self.awaitingView = "root"
 
@@ -456,6 +1355,8 @@ function RB:RequestRoot()
 end
 
 function RB:RequestCategory(categoryId, page)
+    self:HideWithdrawPrompt()
+    self:HideDepositPreview()
     categoryId = tonumber(categoryId)
     page = tonumber(page) or 0
 
@@ -471,17 +1372,162 @@ function RB:RequestCategory(categoryId, page)
     local categoryName = category and category.name or "category"
 
     self:BeginBusy("request", "Loading " .. categoryName .. "...")
-    self:SendServerCommand("list " .. tostring(categoryId) .. " " .. tostring(page))
+    self:SendServerCommand("list " .. tostring(categoryId) .. " " .. tostring(page) .. " " .. self:GetItemSortMode())
 end
 
-function RB:DepositAll()
+function RB:HideDepositPreview()
+    if self.frame and self.frame.depositPreview then
+        self.frame.depositPreview:Hide()
+    end
+
+    self.pendingDepositPreview = nil
+    self.depositPreview = nil
+    self:UpdateControls()
+end
+
+function RB:BuildDepositPreviewTitle(preview)
+    local scope = tostring(preview and preview.scope or "all")
+
+    if scope == "category" then
+        local category = CATEGORY_BY_ID[tonumber(preview and preview.categoryId)]
+        return "Deposit Preview: " .. tostring(category and category.name or "Category")
+    end
+
+    return "Deposit Preview: All Bags"
+end
+
+function RB:RequestDepositPreview(scope, categoryId)
+    self:HideWithdrawPrompt()
+    self:HideDepositPreview()
+
+    scope = tostring(scope or "all")
+
+    if scope == "category" then
+        categoryId = tonumber(categoryId or self.currentCategoryId)
+        if not categoryId then
+            return
+        end
+
+        self:BeginBusy("request", "Building deposit preview...")
+        self:SendServerCommand("preview deposit category " .. tostring(categoryId))
+        return
+    end
+
+    self:BeginBusy("request", "Building deposit preview...")
+    self:SendServerCommand("preview deposit all")
+end
+
+function RB:ShowDepositPreview(preview)
+    self:CreateFrame()
+    self:HideWithdrawPrompt()
+
+    if not preview or not preview.items or #preview.items == 0 then
+        self:HideDepositPreview()
+        self:ClearBusy("No matching reagents were found in your bags.", 1.00, 0.82, 0.32)
+        return
+    end
+
+    table.sort(preview.items, function(a, b)
+        local _, an = GetItemDisplay(a.entry)
+        local _, bn = GetItemDisplay(b.entry)
+        an = string.lower(tostring(an or ""))
+        bn = string.lower(tostring(bn or ""))
+        if an == bn then
+            return (tonumber(a.entry) or 0) < (tonumber(b.entry) or 0)
+        end
+        return an < bn
+    end)
+
+    self.depositPreview = preview
+
+    local f = self.frame
+    local panel = f.depositPreview
+    panel:Show()
+    panel.title:SetText(self:BuildDepositPreviewTitle(preview))
+    panel.summary:SetText("This will deposit " .. FormatCount(preview.total or 0) .. " reagent(s) across " .. tostring(#preview.items) .. " item type(s).")
+
+    local missingItemInfo = false
+    for index = 1, DEPOSIT_PREVIEW_ROW_COUNT do
+        local row = panel.rows[index]
+        local item = preview.items[index]
+
+        if item then
+            local icon, name, link, stackCount, missingInfo = GetItemDisplay(item.entry)
+            if missingInfo then
+                missingItemInfo = true
+            end
+
+            row.icon:SetTexture(icon)
+            row.name:SetText(link or name)
+            row.count:SetText("x" .. FormatCount(item.amount))
+            row:Show()
+        else
+            row:Hide()
+        end
+    end
+
+    local remaining = #preview.items - DEPOSIT_PREVIEW_ROW_COUNT
+    if remaining > 0 then
+        panel.more:SetText("+" .. tostring(remaining) .. " more item type(s).")
+        panel.more:Show()
+    else
+        panel.more:SetText("")
+        panel.more:Hide()
+    end
+
+    self:SetButtonEnabled(panel.confirm, self.busyKind == nil)
+    self:ClearBusy("Review the deposit preview, then confirm or cancel.", 0.82, 0.82, 0.82)
+
+    if missingItemInfo then
+        self:QueueItemInfoRefresh()
+    end
+end
+
+function RB:RunDeposit(scope, categoryId)
+    self:HideWithdrawPrompt()
+    self:HideDepositPreview()
+
+    scope = tostring(scope or "all")
+
+    if scope == "category" then
+        categoryId = tonumber(categoryId or self.currentCategoryId)
+        if not categoryId then
+            return
+        end
+
+        self.mutationNeedsRefresh = "category"
+        self:BeginBusy("mutation", "Depositing this category...")
+        self:SendServerCommand("deposit category " .. tostring(categoryId), { action = "deposit", source = "manual" })
+        self:ScheduleRefresh(MUTATION_REFRESH_DELAY, "category", categoryId, self.currentPage or 0)
+        return
+    end
+
     self.mutationNeedsRefresh = "root"
     self:BeginBusy("mutation", "Depositing all reagents...")
-    self:SendServerCommand("deposit all")
+    self:SendServerCommand("deposit all", { action = "deposit", source = "manual" })
     self:ScheduleRefresh(MUTATION_REFRESH_DELAY, "root", nil, 0)
 end
 
+function RB:ConfirmDepositPreview()
+    local preview = self.depositPreview
+    if not preview then
+        self:HideDepositPreview()
+        return
+    end
+
+    self:RunDeposit(preview.scope, preview.categoryId)
+end
+
+function RB:DepositAll()
+    if self:IsDepositPreviewEnabled() then
+        self:RequestDepositPreview("all")
+    else
+        self:RunDeposit("all")
+    end
+end
+
 function RB:WithdrawAll()
+    self:HideWithdrawPrompt()
     self.mutationNeedsRefresh = "root"
     self:BeginBusy("mutation", "Withdrawing all reagents...")
     self:SendServerCommand("withdraw all")
@@ -493,13 +1539,15 @@ function RB:DepositCategory()
         return
     end
 
-    self.mutationNeedsRefresh = "category"
-    self:BeginBusy("mutation", "Depositing this category...")
-    self:SendServerCommand("deposit category " .. tostring(self.currentCategoryId))
-    self:ScheduleRefresh(MUTATION_REFRESH_DELAY, "category", self.currentCategoryId, self.currentPage or 0)
+    if self:IsDepositPreviewEnabled() then
+        self:RequestDepositPreview("category", self.currentCategoryId)
+    else
+        self:RunDeposit("category", self.currentCategoryId)
+    end
 end
 
 function RB:WithdrawCategory()
+    self:HideWithdrawPrompt()
     if not self.currentCategoryId then
         return
     end
@@ -618,6 +1666,7 @@ function RB:GetExactWithdrawAmount()
 end
 
 function RB:WithdrawItem(mode)
+    self:HideWithdrawPrompt()
     if not self.detailItem or not self.detailItem.entry then
         return
     end
@@ -642,6 +1691,7 @@ function RB:WithdrawItem(mode)
 end
 
 function RB:WithdrawItemExact()
+    self:HideWithdrawPrompt()
     if not self.detailItem or not self.detailItem.entry then
         return
     end
@@ -672,6 +1722,148 @@ function RB:WithdrawItemExact()
     end
 
     self:ScheduleRefresh(MUTATION_REFRESH_DELAY, "category", categoryId, page)
+end
+
+function RB:GetWithdrawPromptAmount()
+    if not self.frame or not self.frame.quickWithdrawBox then
+        return 0
+    end
+
+    local amount = tonumber(self.frame.quickWithdrawBox:GetText() or "") or 0
+    amount = math.floor(amount)
+
+    if amount < 0 then
+        amount = 0
+    end
+
+    return amount
+end
+
+function RB:HideWithdrawPrompt()
+    self.promptItem = nil
+
+    if self.frame and self.frame.quickWithdraw then
+        self.frame.quickWithdraw:Hide()
+    end
+
+    if self.frame and self.frame.quickWithdrawBox then
+        self.frame.quickWithdrawBox:SetText("")
+        self.frame.quickWithdrawBox:ClearFocus()
+    end
+
+    self:UpdateControls()
+end
+
+function RB:UpdateQuickWithdrawControls()
+    if not self.frame or not self.frame.quickWithdraw then
+        return
+    end
+
+    local item = self.promptItem
+    local stored = item and (tonumber(item.amount) or 0) or 0
+    local amount = self:GetWithdrawPromptAmount()
+    local enabled = self.busyKind == nil and item ~= nil and stored > 0 and amount > 0 and amount <= stored
+
+    if amount > stored and stored > 0 then
+        self.frame.quickWithdrawHint:SetText("Amount is higher than stored. Enter " .. FormatCount(stored) .. " or less.")
+        self.frame.quickWithdrawHint:SetTextColor(1.00, 0.50, 0.35)
+    else
+        self.frame.quickWithdrawHint:SetText("")
+        self.frame.quickWithdrawHint:SetTextColor(0.50, 0.50, 0.50)
+    end
+
+    self:SetButtonEnabled(self.frame.quickWithdrawButton, enabled)
+    self:SetButtonEnabled(self.frame.quickWithdrawAll, self.busyKind == nil and item ~= nil and stored > 0)
+    self:SetButtonEnabled(self.frame.quickWithdrawCancel, true)
+end
+
+function RB:SetWithdrawPromptAmountToAll()
+    if not self.promptItem or not self.frame or not self.frame.quickWithdrawBox then
+        return
+    end
+
+    local stored = math.max(tonumber(self.promptItem.amount) or 0, 0)
+    self.frame.quickWithdrawBox:SetText(tostring(math.floor(stored)))
+    self.frame.quickWithdrawBox:HighlightText()
+    self:UpdateQuickWithdrawControls()
+end
+
+function RB:ShowWithdrawPrompt(item)
+    if not item or not item.entry then
+        return
+    end
+
+    self:CreateFrame()
+
+    local stored = math.max(tonumber(item.amount) or 0, 0)
+    if stored <= 0 then
+        self:Status("That item is no longer stored.", 1.00, 0.82, 0.32)
+        return
+    end
+
+    self.promptItem = item
+    HideTooltip()
+
+    local f = self.frame
+    local icon, name, link, stackCount = GetItemDisplay(item.entry)
+
+    f.quickWithdrawIcon:SetTexture(icon)
+    f.quickWithdrawName:SetText(link or name)
+    f.quickWithdrawStored:SetText("Stored: " .. FormatCount(stored))
+    f.quickWithdrawBox:SetText("")
+    f.quickWithdrawBox:SetFocus()
+    f.quickWithdrawBox:HighlightText()
+    f.quickWithdraw:Show()
+    f.quickWithdraw:SetFrameLevel((f:GetFrameLevel() or 1) + 80)
+
+    self:UpdateQuickWithdrawControls()
+    self:Status("Enter amount to withdraw for " .. tostring(name or ("Item #" .. tostring(item.entry))) .. ".", 0.82, 0.82, 0.82)
+end
+
+function RB:WithdrawItemExactFromPrompt(item, amount)
+    if not item or not item.entry then
+        return
+    end
+
+    amount = math.floor(tonumber(amount) or 0)
+
+    if amount <= 0 then
+        self:Status("Enter an amount first.", 1.00, 0.82, 0.32)
+        return
+    end
+
+    local stored = tonumber(item.amount) or 0
+    if amount > stored then
+        self:Status("You only have " .. FormatCount(stored) .. " stored.", 1.00, 0.82, 0.32)
+        return
+    end
+
+    local categoryId = self.currentCategoryId or 0
+    local page = self.currentPage or 0
+    local itemEntry = item.entry
+    local optimisticAmount = self:GetOptimisticWithdrawAmount(item, "exact", amount)
+
+    self.mutationNeedsRefresh = "category"
+    self:BeginBusy("mutation", "Withdrawing exact amount...")
+    self:SendServerCommand("withdraw item " .. tostring(itemEntry) .. " exact " .. tostring(amount) .. " " .. tostring(categoryId) .. " " .. tostring(page))
+
+    if optimisticAmount > 0 then
+        self:ApplyOptimisticWithdraw(itemEntry, optimisticAmount)
+        self:Status("Exact withdraw sent. Count updated locally; synchronizing...", 0.82, 0.82, 0.82)
+    end
+
+    self:HideWithdrawPrompt()
+    self:ScheduleRefresh(MUTATION_REFRESH_DELAY, "category", categoryId, page)
+end
+
+function RB:ConfirmWithdrawPrompt()
+    if not self.promptItem then
+        self:HideWithdrawPrompt()
+        return
+    end
+
+    local amount = self:GetWithdrawPromptAmount()
+    self:WithdrawItemExactFromPrompt(self.promptItem, amount)
 end
 
 function RB:ClampTradeSkillPrepareCount(value)
@@ -770,7 +1962,7 @@ function RB:SyncNativeTradeSkillRepeatCount(value)
     self.suppressNativeTradeSkillQuantityChanged = nil
 end
 
-function RB:GetSelectedTradeSkillNeeds()
+function RB:GetSelectedTradeSkillReagents()
     if not GetTradeSkillSelectionIndex or not GetTradeSkillInfo or not GetTradeSkillNumReagents or not GetTradeSkillReagentInfo then
         return nil, "The trade skill API is not available.", nil, nil
     end
@@ -787,7 +1979,7 @@ function RB:GetSelectedTradeSkillNeeds()
 
     local reagentCount = GetTradeSkillNumReagents(index) or 0
     if reagentCount <= 0 then
-        return nil, "Selected recipe has no item reagents.", recipeName, 1
+        return {}, nil, recipeName, self:GetTradeSkillRepeatCount()
     end
 
     local repeatCount = self:GetTradeSkillRepeatCount()
@@ -805,7 +1997,6 @@ function RB:GetSelectedTradeSkillNeeds()
 
         local itemEntry = ParseItemIdFromLink(link)
         if itemEntry and requiredCount > 0 then
-            local totalRequired = requiredCount * repeatCount
             local inBags = 0
 
             if GetItemCount then
@@ -816,27 +2007,205 @@ function RB:GetSelectedTradeSkillNeeds()
                 inBags = tonumber(playerCount) or 0
             end
 
-            local missing = totalRequired - inBags
-            if missing > 0 then
-                if not byItem[itemEntry] then
-                    byItem[itemEntry] = {
-                        itemEntry = itemEntry,
-                        amount = 0,
-                        name = reagentName or ("Item #" .. tostring(itemEntry)),
-                    }
-                    table.insert(order, itemEntry)
+            if not byItem[itemEntry] then
+                byItem[itemEntry] = {
+                    itemEntry = itemEntry,
+                    entry = itemEntry,
+                    requiredPerCraft = 0,
+                    bagCount = 0,
+                    name = reagentName or ("Item #" .. tostring(itemEntry)),
+                }
+                table.insert(order, itemEntry)
+            end
+
+            byItem[itemEntry].requiredPerCraft = byItem[itemEntry].requiredPerCraft + requiredCount
+            byItem[itemEntry].bagCount = math.max(tonumber(byItem[itemEntry].bagCount) or 0, inBags)
+        end
+    end
+
+    local reagents = {}
+    for _, itemEntry in ipairs(order) do
+        local reagent = byItem[itemEntry]
+        if reagent and (tonumber(reagent.requiredPerCraft) or 0) > 0 then
+            table.insert(reagents, reagent)
+        end
+    end
+
+    return reagents, nil, recipeName, repeatCount
+end
+
+function RB:BuildTradeSkillReagentKey(reagents)
+    local parts = {}
+
+    for _, reagent in ipairs(reagents or {}) do
+        local itemEntry = tonumber(reagent.itemEntry or reagent.entry)
+        local requiredPerCraft = math.floor(tonumber(reagent.requiredPerCraft or reagent.amount) or 0)
+
+        if itemEntry and itemEntry > 0 and requiredPerCraft > 0 then
+            table.insert(parts, tostring(math.floor(itemEntry)) .. "x" .. tostring(requiredPerCraft))
+        end
+    end
+
+    table.sort(parts)
+    return table.concat(parts, ";")
+end
+
+function RB:RequestTradeSkillBankCounts(reagents)
+    if not reagents or #reagents == 0 then
+        return
+    end
+
+    local key = self:BuildTradeSkillReagentKey(reagents)
+    if key == "" then
+        return
+    end
+
+    if self.tradeSkillBankCountsKey == key then
+        return
+    end
+
+    if self.pendingTradeSkillCheckKey == key and self.pendingTradeSkillCheckUntil and GetTime() < self.pendingTradeSkillCheckUntil then
+        return
+    end
+
+    self.tradeSkillCheckRequestId = (tonumber(self.tradeSkillCheckRequestId) or 0) + 1
+    if self.tradeSkillCheckRequestId > 100000000 then
+        self.tradeSkillCheckRequestId = 1
+    end
+
+    local requestId = self.tradeSkillCheckRequestId
+    self.pendingTradeSkillChecks = self.pendingTradeSkillChecks or {}
+    self.pendingTradeSkillChecks[requestId] = {
+        key = key,
+        createdAt = GetTime(),
+    }
+    self.pendingTradeSkillCheckKey = key
+    self.pendingTradeSkillCheckUntil = GetTime() + TRADE_SKILL_CHECK_TIMEOUT
+
+    local items = {}
+    for _, reagent in ipairs(reagents) do
+        local itemEntry = tonumber(reagent.itemEntry or reagent.entry)
+        local requiredPerCraft = math.floor(tonumber(reagent.requiredPerCraft) or 0)
+
+        if itemEntry and itemEntry > 0 and requiredPerCraft > 0 then
+            table.insert(items, {
+                entry = math.floor(itemEntry),
+                amount = requiredPerCraft,
+            })
+        end
+    end
+
+    if #items > 0 then
+        self:SendServerCommand(self:BuildItemAmountCommand("check recipe " .. tostring(requestId), items))
+    end
+end
+
+function RB:GetTradeSkillCraftability(reagents, repeatCount)
+    local key = self:BuildTradeSkillReagentKey(reagents)
+    local bankCountsReady = key ~= "" and self.tradeSkillBankCountsKey == key
+    local bankCounts = bankCountsReady and self.tradeSkillBankCounts or {}
+
+    local bagCrafts = nil
+    local bankCrafts = nil
+    local missingTypes = 0
+
+    repeatCount = self:ClampTradeSkillPrepareCount(repeatCount or 1)
+
+    for _, reagent in ipairs(reagents or {}) do
+        local itemEntry = tonumber(reagent.itemEntry or reagent.entry)
+        local requiredPerCraft = math.floor(tonumber(reagent.requiredPerCraft) or 0)
+
+        if itemEntry and itemEntry > 0 and requiredPerCraft > 0 then
+            local bagCount = 0
+            if GetItemCount then
+                bagCount = tonumber(GetItemCount(itemEntry, false)) or 0
+            end
+
+            if (not bagCount or bagCount <= 0) and reagent.bagCount then
+                bagCount = tonumber(reagent.bagCount) or 0
+            end
+
+            local bankCount = tonumber(bankCounts and bankCounts[itemEntry]) or 0
+            local fromBags = math.floor(bagCount / requiredPerCraft)
+            local fromBank = math.floor(bankCount / requiredPerCraft)
+
+            if bagCrafts == nil or fromBags < bagCrafts then
+                bagCrafts = fromBags
+            end
+
+            if bankCountsReady then
+                if bankCrafts == nil or fromBank < bankCrafts then
+                    bankCrafts = fromBank
                 end
 
-                byItem[itemEntry].amount = byItem[itemEntry].amount + missing
+                if bagCount + bankCount < requiredPerCraft * repeatCount then
+                    missingTypes = missingTypes + 1
+                end
             end
         end
     end
 
+    if bagCrafts == nil then
+        bagCrafts = 0
+    end
+
+    if bankCountsReady and bankCrafts == nil then
+        bankCrafts = 0
+    end
+
+    return {
+        bankReady = bankCountsReady,
+        bankCrafts = bankCrafts,
+        bagCrafts = bagCrafts,
+        missingTypes = missingTypes,
+    }
+end
+
+function RB:UpdateTradeSkillStatsText()
+    if not self.tradeSkillStatsText then
+        return
+    end
+
+    -- Disabled intentionally: this stats line queried bank craftability on every
+    -- trade-skill update/search and could cause heavy blanket scans.
+    self.tradeSkillStatsText:SetText("")
+    self.tradeSkillStatsText:Hide()
+end
+
+function RB:GetSelectedTradeSkillNeeds()
+    local reagents, errText, recipeName, repeatCount = self:GetSelectedTradeSkillReagents()
+    if errText then
+        return nil, errText, recipeName, repeatCount
+    end
+
+    repeatCount = self:ClampTradeSkillPrepareCount(repeatCount or 1)
+
+    if not reagents or #reagents == 0 then
+        return {}, nil, recipeName, repeatCount
+    end
+
     local needs = {}
-    for _, itemEntry in ipairs(order) do
-        local need = byItem[itemEntry]
-        if need and need.amount > 0 then
-            table.insert(needs, need)
+    for _, reagent in ipairs(reagents) do
+        local itemEntry = tonumber(reagent.itemEntry or reagent.entry)
+        local requiredPerCraft = tonumber(reagent.requiredPerCraft) or 0
+        local bagCount = 0
+
+        if itemEntry and GetItemCount then
+            bagCount = tonumber(GetItemCount(itemEntry, false)) or 0
+        end
+
+        if bagCount <= 0 and reagent.bagCount then
+            bagCount = tonumber(reagent.bagCount) or 0
+        end
+
+        local missing = (requiredPerCraft * repeatCount) - bagCount
+        if itemEntry and itemEntry > 0 and missing > 0 then
+            table.insert(needs, {
+                itemEntry = itemEntry,
+                entry = itemEntry,
+                amount = math.floor(missing),
+                name = reagent.name or ("Item #" .. tostring(itemEntry)),
+            })
         end
     end
 
@@ -844,18 +2213,271 @@ function RB:GetSelectedTradeSkillNeeds()
 end
 
 function RB:BuildItemAmountCommand(prefix, items)
-    local command = prefix
+    local commands = self:BuildItemAmountCommands(prefix, items, 999)
+    return commands[1] or prefix
+end
 
-    for _, item in ipairs(items or {}) do
-        local itemEntry = tonumber(item.itemEntry or item.entry)
-        local amount = tonumber(item.amount) or 0
+function RB:NormalizeTransactionAction(action)
+    action = string.lower(tostring(action or ""))
 
-        if itemEntry and itemEntry > 0 and amount > 0 then
-            command = command .. " " .. tostring(itemEntry) .. " " .. tostring(math.floor(amount))
+    if action == "deposit" or action == "withdraw" then
+        return action
+    end
+
+    return nil
+end
+
+function RB:BuildTransactionSummary(transaction)
+    if not transaction or not transaction.action or not transaction.items or #transaction.items == 0 then
+        return "No reversible transaction is available."
+    end
+
+    local total = tonumber(transaction.total) or 0
+    if total <= 0 then
+        for _, item in ipairs(transaction.items) do
+            total = total + (tonumber(item.amount) or 0)
         end
     end
 
-    return command
+    local verb = transaction.action == "deposit" and "Deposited" or "Withdrew"
+    return "Last: " .. verb .. " " .. FormatCount(total) .. " reagent(s) across " .. tostring(#transaction.items) .. " item type(s)."
+end
+
+function RB:GetTransactionTotal(transaction)
+    local total = tonumber(transaction and transaction.total) or 0
+
+    if total > 0 then
+        return total
+    end
+
+    for _, item in ipairs((transaction and transaction.items) or {}) do
+        total = total + (tonumber(item.amount) or 0)
+    end
+
+    return total
+end
+
+function RB:BuildTransactionItemChatList(transaction, limit)
+    if not transaction or not transaction.items or #transaction.items == 0 then
+        return ""
+    end
+
+    limit = math.max(1, tonumber(limit) or TRANSACTION_CHAT_ITEM_LIMIT)
+
+    local items = {}
+    for _, item in ipairs(transaction.items) do
+        local itemEntry = tonumber(item.entry)
+        local amount = tonumber(item.amount) or 0
+
+        if itemEntry and itemEntry > 0 and amount > 0 then
+            local icon, name, link = GetItemDisplay(itemEntry)
+            table.insert(items, {
+                entry = itemEntry,
+                amount = math.floor(amount),
+                name = name or ("Item #" .. tostring(itemEntry)),
+                text = BuildItemAmountChatText(itemEntry, amount),
+            })
+        end
+    end
+
+    table.sort(items, function(a, b)
+        local an = string.lower(tostring(a.name or ""))
+        local bn = string.lower(tostring(b.name or ""))
+        if an == bn then
+            return (tonumber(a.entry) or 0) < (tonumber(b.entry) or 0)
+        end
+        return an < bn
+    end)
+
+    local pieces = {}
+    local shown = math.min(#items, limit)
+    for index = 1, shown do
+        table.insert(pieces, items[index].text)
+    end
+
+    if #items > shown then
+        table.insert(pieces, "+" .. tostring(#items - shown) .. " more")
+    end
+
+    return table.concat(pieces, ", ")
+end
+
+function RB:GetDepositChatPrefix(transaction)
+    local source = SafeTransactionSource(transaction and transaction.source)
+
+    if source == "profession" then
+        return "Profession leftovers auto-deposited"
+    elseif source == "reverse" then
+        return "Undo deposited"
+    end
+
+    return "Deposited"
+end
+
+function RB:PrintDepositTransactionMessage(transaction)
+    if not transaction or transaction.action ~= "deposit" or not transaction.items or #transaction.items == 0 then
+        return
+    end
+
+    local total = self:GetTransactionTotal(transaction)
+    if total <= 0 then
+        return
+    end
+
+    local detailText = self:BuildTransactionItemChatList(transaction, TRANSACTION_CHAT_ITEM_LIMIT)
+    local prefix = self:GetDepositChatPrefix(transaction)
+    local message = prefix .. " " .. FormatCount(total) .. " reagent(s)"
+
+    if detailText ~= "" then
+        message = message .. ": " .. detailText
+    end
+
+    message = message .. "."
+    PrintAddon(message)
+
+    if self.frame and self.frame:IsShown() then
+        self:Status(message, 0.45, 1.00, 0.45)
+    end
+end
+
+function RB:GetReverseTransactionLabel(transaction)
+    if not transaction or not transaction.action then
+        return "Reverse Last"
+    end
+
+    if transaction.action == "deposit" then
+        return "Undo Deposit"
+    elseif transaction.action == "withdraw" then
+        return "Undo Withdraw"
+    end
+
+    return "Reverse Last"
+end
+
+function RB:UpdateUndoButton()
+    if not self.frame or not self.frame.undoLast then
+        return
+    end
+
+    local transaction = self.lastTransaction
+    local canReverse = transaction and transaction.items and #transaction.items > 0
+
+    self.frame.undoLast:SetText(self:GetReverseTransactionLabel(transaction))
+    self.frame.undoLast.tooltipText = canReverse and self:BuildTransactionSummary(transaction) or "No reversible deposit or withdraw transaction has been seen yet."
+    self:SetButtonEnabled(self.frame.undoLast, canReverse and self.busyKind == nil)
+end
+
+function RB:MergeTransactionIntoCollector(transaction)
+    if not transaction or not self.reverseCollector then
+        return false
+    end
+
+    local collector = self.reverseCollector
+    collector.action = transaction.action
+    collector.itemsByEntry = collector.itemsByEntry or {}
+
+    for _, item in ipairs(transaction.items or {}) do
+        local itemEntry = tonumber(item.entry)
+        local amount = tonumber(item.amount) or 0
+        if itemEntry and itemEntry > 0 and amount > 0 then
+            collector.itemsByEntry[itemEntry] = (collector.itemsByEntry[itemEntry] or 0) + amount
+            collector.total = (collector.total or 0) + amount
+        end
+    end
+
+    collector.remaining = math.max((collector.remaining or 1) - 1, 0)
+
+    if collector.remaining <= 0 then
+        local items = {}
+        for itemEntry, amount in pairs(collector.itemsByEntry) do
+            table.insert(items, {
+                entry = tonumber(itemEntry),
+                amount = tonumber(amount) or 0,
+            })
+        end
+
+        table.sort(items, function(a, b)
+            return (tonumber(a.entry) or 0) < (tonumber(b.entry) or 0)
+        end)
+
+        self.lastTransaction = {
+            action = collector.action,
+            source = "reverse",
+            total = collector.total or 0,
+            items = items,
+            updatedAt = GetTime(),
+        }
+        self.reverseCollector = nil
+        self:PrintDepositTransactionMessage(self.lastTransaction)
+        self:UpdateUndoButton()
+        return true
+    end
+
+    return true
+end
+
+function RB:FinalizeTransaction(transaction)
+    if not transaction or not transaction.action or not transaction.items or #transaction.items == 0 then
+        return
+    end
+
+    if self.reverseCollector and self:MergeTransactionIntoCollector(transaction) then
+        return
+    end
+
+    transaction.updatedAt = GetTime()
+    self.lastTransaction = transaction
+    self:PrintDepositTransactionMessage(transaction)
+    self:UpdateUndoButton()
+end
+
+function RB:ReverseLastTransaction()
+    local transaction = self.lastTransaction
+    if not transaction or not transaction.items or #transaction.items == 0 then
+        self:Status("No reversible transaction is available.", 1.00, 0.82, 0.32)
+        return
+    end
+
+    local prefix = nil
+    local reverseAction = nil
+
+    if transaction.action == "deposit" then
+        prefix = "withdraw needed"
+        reverseAction = "withdraw"
+    elseif transaction.action == "withdraw" then
+        prefix = "deposit items"
+        reverseAction = "deposit"
+    end
+
+    if not prefix then
+        self:Status("This transaction cannot be reversed.", 1.00, 0.82, 0.32)
+        return
+    end
+
+    local commands = self:BuildItemAmountCommands(prefix, transaction.items, TRANSACTION_MAX_PAIRS_PER_COMMAND)
+    if #commands == 0 then
+        self:Status("No reversible item amounts were found.", 1.00, 0.82, 0.32)
+        return
+    end
+
+    self.reverseCollector = {
+        action = reverseAction,
+        remaining = #commands,
+        total = 0,
+        itemsByEntry = {},
+    }
+
+    if reverseAction == "withdraw" then
+        end
+
+    self.mutationNeedsRefresh = self.currentView == "category" and "category" or "root"
+    self:BeginBusy("mutation", "Reversing last reagent bank action...")
+
+    for _, command in ipairs(commands) do
+        self:SendServerCommand(command, { action = reverseAction, source = "reverse" })
+    end
+
+    self:ScheduleCurrentRefresh(MUTATION_REFRESH_DELAY)
 end
 
 function RB:ArmAutoDepositLeftovers(needs, recipeName, repeatCount)
@@ -958,8 +2580,7 @@ function RB:WithdrawNeededForSelectedRecipe()
 
     self:ArmAutoDepositLeftovers(needs, recipeName, repeatCount)
 
-    local command = self:BuildItemAmountCommand("withdraw needed", needs)
-    self:SendServerCommand(command)
+    self:SendItemAmountCommands("withdraw needed", needs, TRANSACTION_MAX_PAIRS_PER_COMMAND)
 
     local total = 0
     for _, need in ipairs(needs) do
@@ -987,8 +2608,13 @@ function RB:DepositPreparedLeftovers()
         return
     end
 
-    local command = self:BuildItemAmountCommand("deposit items", items)
-    self:SendServerCommand(command)
+    self:SendItemAmountCommands(
+        "deposit items",
+        items,
+        TRANSACTION_MAX_PAIRS_PER_COMMAND,
+        { action = "deposit", source = "profession" }
+    )
+
     PrintAddon("Auto-depositing prepared reagent leftovers after closing the profession window.")
 end
 
@@ -1048,6 +2674,173 @@ function RB:PositionPaperDollButton()
             PAPERDOLL_BUTTON_FALLBACK_X,
             PAPERDOLL_BUTTON_FALLBACK_Y
         )
+    end
+end
+
+function RB:CreateColorSettingsFrame()
+    if self.colorSettingsFrame then
+        return
+    end
+
+    local frame = CreateFrame("Frame", "ReagentBankUIColorSettingsFrame", UIParent)
+    frame:SetWidth(390)
+    frame:SetHeight(246)
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:SetClampedToScreen(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetFrameStrata("DIALOG")
+    frame:SetScript("OnDragStart", function(selfFrame)
+        selfFrame:StartMoving()
+    end)
+    frame:SetScript("OnDragStop", function(selfFrame)
+        selfFrame:StopMovingOrSizing()
+    end)
+
+    self:MakeBackdrop(frame, 0.98, true)
+
+    frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    frame.title:SetPoint("TOPLEFT", 16, -14)
+    frame.title:SetPoint("RIGHT", -46, 0)
+    frame.title:SetJustifyH("LEFT")
+    frame.title:SetText("Reagent Bank Color Schema")
+    frame.title:SetTextColor(SKIN.titleText[1], SKIN.titleText[2], SKIN.titleText[3], SKIN.titleText[4] or 1)
+
+    frame.close = self:CreateCloseButton(frame)
+    frame.close:SetPoint("TOPRIGHT", -8, -8)
+    frame.close:SetScript("OnClick", function()
+        RB:HideColorSettings()
+    end)
+
+    frame.note = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    frame.note:SetPoint("TOPLEFT", 16, -44)
+    frame.note:SetPoint("RIGHT", -16, 0)
+    frame.note:SetJustifyH("LEFT")
+    frame.note:SetText("Ctrl-click the paperdoll reagent bank icon to reopen this panel. Themes are saved per account.")
+    frame.note:SetTextColor(SKIN.mutedText[1], SKIN.mutedText[2], SKIN.mutedText[3], SKIN.mutedText[4] or 1)
+
+    frame.themeButtons = {}
+
+    local firstColumnX = 18
+    local secondColumnX = 198
+    local firstRowY = -82
+    local rowGap = 34
+    local buttonWidth = 158
+    local buttonHeight = 26
+
+    for index, themeKey in ipairs(SKIN_THEME_ORDER) do
+        local columnX = firstColumnX
+        local rowIndex = index
+
+        if index > 3 then
+            columnX = secondColumnX
+            rowIndex = index - 3
+        end
+
+        local theme = SKIN_THEMES[themeKey]
+        local button = self:CreateButton(frame, buttonWidth, buttonHeight, theme and theme.label or themeKey)
+        button.themeKey = themeKey
+        button:SetPoint("TOPLEFT", columnX, firstRowY - ((rowIndex - 1) * rowGap))
+        button:SetScript("OnClick", function(selfButton)
+            RB:SetColorTheme(selfButton.themeKey)
+        end)
+        button:SetScript("OnEnter", function(selfButton)
+            GameTooltip:SetOwner(selfButton, "ANCHOR_RIGHT")
+            GameTooltip:SetText("Color Schema", 1, 0.82, 0)
+            GameTooltip:AddLine("Apply " .. RB:GetColorThemeLabel(selfButton.themeKey) .. ".", 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+        button:SetScript("OnLeave", HideTooltip)
+
+        table.insert(frame.themeButtons, button)
+    end
+
+    frame.cycle = self:CreateButton(frame, 170, 26, "Cycle Theme")
+    frame.cycle:SetPoint("BOTTOMLEFT", 18, 16)
+    frame.cycle:SetScript("OnClick", function()
+        RB:CycleColorTheme()
+    end)
+
+    frame.reset = self:CreateButton(frame, 170, 26, "Reset to Gold")
+    frame.reset:SetPoint("LEFT", frame.cycle, "RIGHT", 12, 0)
+    frame.reset:SetScript("OnClick", function()
+        RB:SetColorTheme(DEFAULT_COLOR_THEME)
+    end)
+
+    self.colorSettingsFrame = frame
+    self:ApplySkin()
+    self:UpdateColorSettingsFrame()
+
+    frame:Hide()
+end
+
+function RB:UpdateColorSettingsFrame()
+    local frame = self.colorSettingsFrame
+    if not frame then
+        return
+    end
+
+    local selected = self:GetColorThemeKey()
+
+    if frame.themeButtons then
+        for _, button in ipairs(frame.themeButtons) do
+            local themeKey = button.themeKey
+            local label = self:GetColorThemeLabel(themeKey)
+
+            if themeKey == selected then
+                button:SetText("✓ " .. label)
+                if button.SetBackdropBorderColor then
+                    button:SetBackdropBorderColor(SKIN.headerLine[1], SKIN.headerLine[2], SKIN.headerLine[3], SKIN.headerLine[4])
+                end
+            else
+                button:SetText(label)
+                if button.SetBackdropBorderColor then
+                    button:SetBackdropBorderColor(SKIN.buttonBorder[1], SKIN.buttonBorder[2], SKIN.buttonBorder[3], SKIN.buttonBorder[4])
+                end
+            end
+        end
+    end
+
+    if frame.cycle then
+        frame.cycle:SetText("Cycle Theme")
+    end
+
+    if frame.reset then
+        frame.reset:SetText("Reset to Gold")
+    end
+end
+
+function RB:ShowColorSettings()
+    self:ApplySavedColorTheme()
+    self:CreateColorSettingsFrame()
+
+    local frame = self.colorSettingsFrame
+    frame:ClearAllPoints()
+
+    if self.paperDollButton and self.paperDollButton:IsShown() then
+        frame:SetPoint("TOPLEFT", self.paperDollButton, "BOTTOMLEFT", -14, -10)
+    else
+        frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    end
+
+    frame:Show()
+    frame:SetFrameLevel(200)
+    self:UpdateColorSettingsFrame()
+end
+
+function RB:HideColorSettings()
+    if self.colorSettingsFrame then
+        self.colorSettingsFrame:Hide()
+    end
+end
+
+function RB:ToggleColorSettings()
+    self:CreateColorSettingsFrame()
+
+    if self.colorSettingsFrame:IsShown() then
+        self:HideColorSettings()
+    else
+        self:ShowColorSettings()
     end
 end
 
@@ -1131,6 +2924,11 @@ function RB:CreatePaperDollButton()
     end)
 
     button:SetScript("OnClick", function(selfButton, mouseButton)
+        if IsControlKeyDown and IsControlKeyDown() then
+            RB:ToggleColorSettings()
+            return
+        end
+
         if mouseButton == "RightButton" then
             RB:CreateFrame()
             RB.frame:Show()
@@ -1146,12 +2944,14 @@ function RB:CreatePaperDollButton()
         GameTooltip:SetText("Reagent Bank", 1, 0.82, 0)
         GameTooltip:AddLine("Left-click: open or close.", 1, 1, 1)
         GameTooltip:AddLine("Right-click: refresh categories.", 0.82, 0.82, 0.82)
+        GameTooltip:AddLine("Ctrl-click: color schema settings.", 0.62, 0.88, 1.00)
         GameTooltip:Show()
     end)
 
     button:SetScript("OnLeave", HideTooltip)
 
     self.paperDollButton = button
+    self:StylePaperDollButton()
     self:PositionPaperDollButton()
 
     -- If the AH button addon loads after this addon, retry for a few seconds
@@ -1242,6 +3042,8 @@ function RB:UpdateTradeSkillControls()
     if self.tradeSkillAutoDepositCheck then
         self.tradeSkillAutoDepositCheck:SetChecked(ReagentBankUIDB.autoDepositLeftovers and true or false)
     end
+
+    self:UpdateTradeSkillStatsText()
 end
 
 function RB:CreateTradeSkillControls()
@@ -1293,9 +3095,9 @@ function RB:CreateTradeSkillControls()
     quantityBox:SetFontObject(ChatFontNormal)
     quantityBox:SetTextInsets(6, 6, 0, 0)
     quantityBox:SetBackdrop(BUTTON_BACKDROP)
-    quantityBox:SetBackdropColor(0.035, 0.038, 0.052, 0.96)
+    quantityBox:SetBackdropColor(SKIN.inputBg[1], SKIN.inputBg[2], SKIN.inputBg[3], SKIN.inputBg[4])
     quantityBox:SetBackdropBorderColor(SKIN.buttonBorder[1], SKIN.buttonBorder[2], SKIN.buttonBorder[3], SKIN.buttonBorder[4])
-    quantityBox:SetTextColor(1.00, 0.92, 0.70)
+    quantityBox:SetTextColor(SKIN.inputText[1], SKIN.inputText[2], SKIN.inputText[3], SKIN.inputText[4] or 1)
     quantityBox:SetPoint("LEFT", quantityLabel, "RIGHT", 4, 0)
     quantityBox:SetScript("OnEscapePressed", function(selfBox)
         RB:NormalizeTradeSkillQuantityBox(false)
@@ -1421,6 +3223,15 @@ function RB:CreateTradeSkillControls()
         checkText:SetTextColor(1.00, 0.86, 0.46)
     end
 
+    local statsText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    statsText:SetPoint("TOPLEFT", button, "BOTTOMLEFT", 0, -6)
+    statsText:SetPoint("RIGHT", parent, "RIGHT", -28, 0)
+    statsText:SetJustifyH("LEFT")
+    statsText:SetTextColor(0.82, 0.82, 0.82)
+    statsText:SetText("")
+    statsText:Hide()
+    self.tradeSkillStatsText = statsText
+
     self.tradeSkillAutoDepositCheck = check
     self:UpdateTradeSkillControls()
 end
@@ -1438,33 +3249,24 @@ function RB:ApplyScale()
 end
 
 function RB:CreateButton(parent, width, height, label)
-    local button = CreateFrame("Button", nil, parent)
+    local button = CreateFrame("Button", nil, parent, "ReagentBankUIButtonTemplate")
     button:SetWidth(width)
     button:SetHeight(height)
     button:SetBackdrop(BUTTON_BACKDROP)
     button:SetBackdropColor(SKIN.buttonBg[1], SKIN.buttonBg[2], SKIN.buttonBg[3], SKIN.buttonBg[4])
     button:SetBackdropBorderColor(SKIN.buttonBorder[1], SKIN.buttonBorder[2], SKIN.buttonBorder[3], SKIN.buttonBorder[4])
 
-    button.shine = button:CreateTexture(nil, "BORDER")
-    button.shine:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
-    button.shine:SetPoint("TOPLEFT", 2, -2)
-    button.shine:SetPoint("TOPRIGHT", -2, -2)
-    button.shine:SetHeight(7)
-    button.shine:SetVertexColor(1.00, 0.78, 0.32, 0.15)
+    if button.hover then
+        button:SetHighlightTexture(button.hover)
+    end
 
-    button.hover = button:CreateTexture(nil, "HIGHLIGHT")
-    button.hover:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
-    button.hover:SetAllPoints(button)
-    button.hover:SetVertexColor(SKIN.buttonHover[1], SKIN.buttonHover[2], SKIN.buttonHover[3], SKIN.buttonHover[4])
-    button:SetHighlightTexture(button.hover)
+    if button.label then
+        button.label:SetText(label or "")
+        button:SetFontString(button.label)
+    end
 
-    button.label = button:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    button.label:SetPoint("CENTER", 0, 0)
-    button.label:SetJustifyH("CENTER")
-    button.label:SetTextColor(1.00, 0.86, 0.46)
-    button.label:SetText(label or "")
-    button:SetFontString(button.label)
     button:SetText(label or "")
+    self:StyleButton(button)
 
     button:SetScript("OnMouseDown", function(selfButton)
         if not selfButton:IsEnabled() then
@@ -1472,21 +3274,25 @@ function RB:CreateButton(parent, width, height, label)
         end
 
         selfButton:SetBackdropColor(SKIN.buttonDown[1], SKIN.buttonDown[2], SKIN.buttonDown[3], SKIN.buttonDown[4])
-        selfButton.label:ClearAllPoints()
-        selfButton.label:SetPoint("CENTER", selfButton, "CENTER", 1, -1)
+        if selfButton.label then
+            selfButton.label:ClearAllPoints()
+            selfButton.label:SetPoint("CENTER", selfButton, "CENTER", 1, -1)
+        end
     end)
 
     button:SetScript("OnMouseUp", function(selfButton)
         selfButton:SetBackdropColor(SKIN.buttonBg[1], SKIN.buttonBg[2], SKIN.buttonBg[3], SKIN.buttonBg[4])
-        selfButton.label:ClearAllPoints()
-        selfButton.label:SetPoint("CENTER", selfButton, "CENTER", 0, 0)
+        if selfButton.label then
+            selfButton.label:ClearAllPoints()
+            selfButton.label:SetPoint("CENTER", selfButton, "CENTER", 0, 0)
+        end
     end)
 
     return button
 end
 
 function RB:CreateEditBox(parent, width, height)
-    local box = CreateFrame("EditBox", nil, parent)
+    local box = CreateFrame("EditBox", nil, parent, "ReagentBankUIEditBoxTemplate")
     box:SetWidth(width)
     box:SetHeight(height)
     box:SetAutoFocus(false)
@@ -1494,9 +3300,9 @@ function RB:CreateEditBox(parent, width, height)
     box:SetFontObject(ChatFontNormal)
     box:SetTextInsets(6, 6, 0, 0)
     box:SetBackdrop(BUTTON_BACKDROP)
-    box:SetBackdropColor(0.035, 0.038, 0.052, 0.96)
+    box:SetBackdropColor(SKIN.inputBg[1], SKIN.inputBg[2], SKIN.inputBg[3], SKIN.inputBg[4])
     box:SetBackdropBorderColor(SKIN.buttonBorder[1], SKIN.buttonBorder[2], SKIN.buttonBorder[3], SKIN.buttonBorder[4])
-    box:SetTextColor(1.00, 0.92, 0.70)
+    box:SetTextColor(SKIN.inputText[1], SKIN.inputText[2], SKIN.inputText[3], SKIN.inputText[4] or 1)
     box:SetScript("OnEscapePressed", function(selfBox)
         selfBox:ClearFocus()
     end)
@@ -1512,32 +3318,35 @@ function RB:CreateEditBox(parent, width, height)
 end
 
 function RB:CreateCloseButton(parent)
-    local button = CreateFrame("Button", nil, parent)
+    local button = CreateFrame("Button", nil, parent, "ReagentBankUICloseButtonTemplate")
     button:SetWidth(24)
     button:SetHeight(24)
     button:SetBackdrop(BUTTON_BACKDROP)
     button:SetBackdropColor(SKIN.closeBg[1], SKIN.closeBg[2], SKIN.closeBg[3], SKIN.closeBg[4])
     button:SetBackdropBorderColor(SKIN.closeBorder[1], SKIN.closeBorder[2], SKIN.closeBorder[3], SKIN.closeBorder[4])
 
-    button.hover = button:CreateTexture(nil, "HIGHLIGHT")
-    button.hover:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
-    button.hover:SetAllPoints(button)
-    button.hover:SetVertexColor(1.00, 0.18, 0.12, 0.25)
-    button:SetHighlightTexture(button.hover)
+    if button.hover then
+        button:SetHighlightTexture(button.hover)
+    end
 
-    button.label = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    button.label:SetPoint("CENTER", 0, 1)
-    button.label:SetText("X")
-    button.label:SetTextColor(1.00, 0.76, 0.58)
+    if button.label then
+        button.label:SetText("X")
+    end
+
+    self:StyleCloseButton(button)
 
     button:SetScript("OnMouseDown", function(selfButton)
-        selfButton.label:ClearAllPoints()
-        selfButton.label:SetPoint("CENTER", selfButton, "CENTER", 1, 0)
+        if selfButton.label then
+            selfButton.label:ClearAllPoints()
+            selfButton.label:SetPoint("CENTER", selfButton, "CENTER", 1, 0)
+        end
     end)
 
     button:SetScript("OnMouseUp", function(selfButton)
-        selfButton.label:ClearAllPoints()
-        selfButton.label:SetPoint("CENTER", selfButton, "CENTER", 0, 1)
+        if selfButton.label then
+            selfButton.label:ClearAllPoints()
+            selfButton.label:SetPoint("CENTER", selfButton, "CENTER", 0, 1)
+        end
     end)
 
     return button
@@ -1556,8 +3365,8 @@ function RB:CreateFrame()
     end
 
     local f = CreateFrame("Frame", "ReagentBankUIFrame", UIParent)
-    f:SetWidth(700)
-    f:SetHeight(610)
+    f:SetWidth(MAIN_FRAME_WIDTH)
+    f:SetHeight(MAIN_FRAME_HEIGHT)
     f:SetPoint("CENTER")
     f:SetMovable(true)
     f:EnableMouse(true)
@@ -1651,12 +3460,39 @@ function RB:CreateFrame()
         end
     end)
 
+    f.sortMode = self:CreateButton(f, ROOT_SORT_BUTTON_WIDTH, ROOT_BUTTON_HEIGHT, "Sort: ID")
+    f.sortMode:SetPoint("LEFT", f.refresh, "RIGHT", ROOT_BUTTON_GAP, 0)
+    f.sortMode:SetScript("OnClick", function()
+        RB:CycleSortMode()
+    end)
+    f.sortMode:SetScript("OnEnter", function(selfButton)
+        GameTooltip:SetOwner(selfButton, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Reagent Bank Sorting", 1, 0.82, 0)
+        GameTooltip:AddLine(selfButton.tooltipText or "Cycle sorting.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    f.sortMode:SetScript("OnLeave", HideTooltip)
+
+    f.previewToggle = self:CreateButton(f, ROOT_PREVIEW_TOGGLE_BUTTON_WIDTH, ROOT_BUTTON_HEIGHT, "Preview: On")
+    f.previewToggle:SetPoint("LEFT", f.sortMode, "RIGHT", ROOT_BUTTON_GAP, 0)
+    f.previewToggle:SetScript("OnClick", function()
+        RB:ToggleDepositPreviewEnabled()
+    end)
+    f.previewToggle:SetScript("OnEnter", function(selfButton)
+        GameTooltip:SetOwner(selfButton, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Deposit Preview Confirmation", 1, 0.82, 0)
+        GameTooltip:AddLine(selfButton.tooltipText or "Toggle deposit confirmation previews.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    f.previewToggle:SetScript("OnLeave", HideTooltip)
+
     f.helpText = f:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    f.helpText:SetPoint("LEFT", f.refresh, "RIGHT", ROOT_HELP_TEXT_GAP, 0)
+    f.helpText:SetPoint("LEFT", f.previewToggle, "RIGHT", ROOT_HELP_TEXT_GAP, 0)
     f.helpText:SetPoint("RIGHT", -18, 0)
     f.helpText:SetJustifyH("LEFT")
     f.helpText:SetTextColor(0.55, 0.58, 0.64)
-    f.helpText:SetText("Click a category, then click an item to withdraw.")
+    f.helpText:SetText("")
+    f.helpText:Hide()
 
     f.back = self:CreateButton(f, CATEGORY_BACK_BUTTON_WIDTH, CATEGORY_BUTTON_HEIGHT, "Categories")
     f.back:SetPoint("TOPLEFT", CATEGORY_BUTTON_ROW_X, CATEGORY_BUTTON_ROW_Y)
@@ -1732,7 +3568,7 @@ function RB:CreateFrame()
 
     f.rows = {}
     for i = 1, ROW_COUNT do
-        local row = CreateFrame("Button", nil, f.list)
+        local row = CreateFrame("Button", nil, f.list, "ReagentBankUIListRowTemplate")
         row:SetHeight(ROW_HEIGHT)
         row:SetPoint("LEFT", 8, 0)
         row:SetPoint("RIGHT", -8, 0)
@@ -1743,42 +3579,37 @@ function RB:CreateFrame()
             row:SetPoint("TOP", f.rows[i - 1], "BOTTOM", 0, -ROW_SPACING)
         end
 
-        row.bg = row:CreateTexture(nil, "BACKGROUND")
-        row.bg:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
-        row.bg:SetAllPoints(row)
-        if (i % 2) == 0 then
-            row.bg:SetVertexColor(SKIN.rowEven[1], SKIN.rowEven[2], SKIN.rowEven[3], SKIN.rowEven[4])
-        else
-            row.bg:SetVertexColor(SKIN.rowOdd[1], SKIN.rowOdd[2], SKIN.rowOdd[3], SKIN.rowOdd[4])
+        if row.fill then
+            row.fill:SetHeight(ROW_HEIGHT)
+            row.fill:SetWidth(1)
+            row.fill:Hide()
         end
 
-        row.icon = row:CreateTexture(nil, "ARTWORK")
-        row.icon:SetWidth(22)
-        row.icon:SetHeight(22)
-        row.icon:SetPoint("LEFT", 4, 0)
+        if row.hover then
+            row:SetHighlightTexture(row.hover)
+        end
 
-        row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        row.text:SetPoint("LEFT", row.icon, "RIGHT", 9, 0)
-        row.text:SetPoint("RIGHT", -170, 0)
-        row.text:SetJustifyH("LEFT")
+        if (i % 2) == 0 then
+            SetTextureColor(row.bg, SKIN.rowEven)
+        else
+            SetTextureColor(row.bg, SKIN.rowOdd)
+        end
+        SetTextureColor(row.fill, SKIN.rowFill)
+        SetTextureColor(row.hover, SKIN.rowHover)
+        SetFontColor(row.count, SKIN.blueText)
 
-        row.count = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        row.count:SetWidth(158)
-        row.count:SetPoint("RIGHT", -8, 0)
-        row.count:SetJustifyH("RIGHT")
-        row.count:SetTextColor(SKIN.blueText[1], SKIN.blueText[2], SKIN.blueText[3])
-
-        row.hover = row:CreateTexture(nil, "HIGHLIGHT")
-        row.hover:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
-        row.hover:SetAllPoints(row)
-        row.hover:SetVertexColor(SKIN.rowHover[1], SKIN.rowHover[2], SKIN.rowHover[3], SKIN.rowHover[4])
-        row:SetHighlightTexture(row.hover)
-
-        row:SetScript("OnClick", function(selfRow)
+        row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+        row:SetScript("OnClick", function(selfRow, mouseButton)
             if selfRow.kind == "category" and selfRow.categoryId then
+                RB:HideWithdrawPrompt()
                 RB:RequestCategory(selfRow.categoryId, 0)
             elseif selfRow.kind == "item" and selfRow.item then
-                RB:ShowDetail(selfRow.item)
+                if mouseButton == "RightButton" then
+                    RB:ShowWithdrawPrompt(selfRow.item)
+                else
+                    RB:HideWithdrawPrompt()
+                    RB:ShowDetail(selfRow.item)
+                end
             end
         end)
 
@@ -1875,15 +3706,183 @@ function RB:CreateFrame()
     end)
     f.detail:SetScript("OnLeave", HideTooltip)
 
+    f.quickWithdraw = CreateFrame("Frame", nil, f)
+    f.quickWithdraw:SetWidth(QUICK_WITHDRAW_WIDTH)
+    f.quickWithdraw:SetHeight(154)
+    f.quickWithdraw:SetPoint("CENTER", f, "CENTER", 0, 18)
+    f.quickWithdraw:SetFrameLevel((f:GetFrameLevel() or 1) + 80)
+    f.quickWithdraw:EnableMouse(true)
+    self:MakeBackdrop(f.quickWithdraw, 0.98, true)
+    f.quickWithdraw:Hide()
+
+    f.quickWithdrawTitle = f.quickWithdraw:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    f.quickWithdrawTitle:SetPoint("TOPLEFT", 16, -13)
+    f.quickWithdrawTitle:SetText("Withdraw Item")
+    f.quickWithdrawTitle:SetTextColor(1.00, 0.82, 0.28)
+
+    f.quickWithdrawClose = self:CreateCloseButton(f.quickWithdraw)
+    f.quickWithdrawClose:SetPoint("TOPRIGHT", -8, -8)
+    f.quickWithdrawClose:SetScript("OnClick", function()
+        RB:HideWithdrawPrompt()
+    end)
+
+    f.quickWithdrawIcon = f.quickWithdraw:CreateTexture(nil, "ARTWORK")
+    f.quickWithdrawIcon:SetWidth(38)
+    f.quickWithdrawIcon:SetHeight(38)
+    f.quickWithdrawIcon:SetPoint("TOPLEFT", 18, -44)
+
+    f.quickWithdrawName = f.quickWithdraw:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    f.quickWithdrawName:SetPoint("TOPLEFT", f.quickWithdrawIcon, "TOPRIGHT", 10, -1)
+    f.quickWithdrawName:SetPoint("RIGHT", -18, 0)
+    f.quickWithdrawName:SetJustifyH("LEFT")
+
+    f.quickWithdrawStored = f.quickWithdraw:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    f.quickWithdrawStored:SetPoint("TOPLEFT", f.quickWithdrawName, "BOTTOMLEFT", 0, -5)
+    f.quickWithdrawStored:SetJustifyH("LEFT")
+
+    f.quickWithdrawLabel = f.quickWithdraw:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    f.quickWithdrawLabel:SetPoint("TOPLEFT", 18, -94)
+    f.quickWithdrawLabel:SetText("Amount:")
+    f.quickWithdrawLabel:SetJustifyH("LEFT")
+
+    f.quickWithdrawBox = self:CreateEditBox(f.quickWithdraw, 82, 24)
+    f.quickWithdrawBox:SetPoint("LEFT", f.quickWithdrawLabel, "RIGHT", 10, 0)
+    f.quickWithdrawBox:SetScript("OnEnterPressed", function(selfBox)
+        selfBox:ClearFocus()
+        RB:ConfirmWithdrawPrompt()
+    end)
+    f.quickWithdrawBox:SetScript("OnEscapePressed", function(selfBox)
+        selfBox:ClearFocus()
+        RB:HideWithdrawPrompt()
+    end)
+    f.quickWithdrawBox:SetScript("OnTextChanged", function()
+        RB:UpdateQuickWithdrawControls()
+    end)
+
+    f.quickWithdrawButton = self:CreateButton(f.quickWithdraw, 112, 26, "Withdraw")
+    f.quickWithdrawButton:SetPoint("LEFT", f.quickWithdrawBox, "RIGHT", 10, 0)
+    f.quickWithdrawButton:SetScript("OnClick", function()
+        RB:ConfirmWithdrawPrompt()
+    end)
+
+    f.quickWithdrawAll = self:CreateButton(f.quickWithdraw, 82, 26, "All")
+    f.quickWithdrawAll:SetPoint("LEFT", f.quickWithdrawButton, "RIGHT", 8, 0)
+    f.quickWithdrawAll:SetScript("OnClick", function()
+        RB:SetWithdrawPromptAmountToAll()
+    end)
+
+    f.quickWithdrawCancel = self:CreateButton(f.quickWithdraw, 82, 26, "Cancel")
+    f.quickWithdrawCancel:SetPoint("LEFT", f.quickWithdrawAll, "RIGHT", 8, 0)
+    f.quickWithdrawCancel:SetScript("OnClick", function()
+        RB:HideWithdrawPrompt()
+    end)
+
+    f.quickWithdrawHint = f.quickWithdraw:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    f.quickWithdrawHint:SetPoint("TOPLEFT", 18, -126)
+    f.quickWithdrawHint:SetPoint("RIGHT", -18, 0)
+    f.quickWithdrawHint:SetJustifyH("LEFT")
+    f.quickWithdrawHint:SetText("")
+
+    f.depositPreview = CreateFrame("Frame", nil, f)
+    f.depositPreview:SetWidth(520)
+    f.depositPreview:SetHeight(370)
+    f.depositPreview:SetPoint("CENTER", f, "CENTER", 0, 8)
+    f.depositPreview:SetFrameLevel((f:GetFrameLevel() or 1) + 90)
+    f.depositPreview:EnableMouse(true)
+    self:MakeBackdrop(f.depositPreview, 0.98, true)
+    f.depositPreview:Hide()
+
+    f.depositPreview.title = f.depositPreview:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    f.depositPreview.title:SetPoint("TOPLEFT", 16, -13)
+    f.depositPreview.title:SetPoint("RIGHT", -48, 0)
+    f.depositPreview.title:SetJustifyH("LEFT")
+    f.depositPreview.title:SetTextColor(1.00, 0.82, 0.28)
+    f.depositPreview.title:SetText("Deposit Preview")
+
+    f.depositPreview.close = self:CreateCloseButton(f.depositPreview)
+    f.depositPreview.close:SetPoint("TOPRIGHT", -8, -8)
+    f.depositPreview.close:SetScript("OnClick", function()
+        RB:HideDepositPreview()
+    end)
+
+    f.depositPreview.summary = f.depositPreview:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    f.depositPreview.summary:SetPoint("TOPLEFT", 18, -42)
+    f.depositPreview.summary:SetPoint("RIGHT", -18, 0)
+    f.depositPreview.summary:SetJustifyH("LEFT")
+    f.depositPreview.summary:SetTextColor(0.82, 0.82, 0.82)
+    f.depositPreview.summary:SetText("")
+
+    f.depositPreview.rows = {}
+    for previewIndex = 1, DEPOSIT_PREVIEW_ROW_COUNT do
+        local previewRow = CreateFrame("Frame", nil, f.depositPreview, "ReagentBankUIPreviewRowTemplate")
+        previewRow:SetHeight(22)
+        previewRow:SetPoint("LEFT", 18, 0)
+        previewRow:SetPoint("RIGHT", -18, 0)
+
+        if previewIndex == 1 then
+            previewRow:SetPoint("TOP", f.depositPreview.summary, "BOTTOM", 0, -12)
+        else
+            previewRow:SetPoint("TOP", f.depositPreview.rows[previewIndex - 1], "BOTTOM", 0, -3)
+        end
+
+        if (previewIndex % 2) == 0 then
+            SetTextureColor(previewRow.bg, SKIN.rowEven, 0.28)
+        else
+            SetTextureColor(previewRow.bg, SKIN.rowOdd, 0.38)
+        end
+        if previewRow.name then
+            previewRow.name:ClearAllPoints()
+            previewRow.name:SetPoint("LEFT", previewRow.icon, "RIGHT", 8, 0)
+            previewRow.name:SetPoint("RIGHT", -110, 0)
+            previewRow.name:SetJustifyH("LEFT")
+        end
+
+        SetFontColor(previewRow.name, SKIN.buttonText)
+        SetFontColor(previewRow.count, SKIN.blueText)
+
+        f.depositPreview.rows[previewIndex] = previewRow
+    end
+
+    f.depositPreview.more = f.depositPreview:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    f.depositPreview.more:SetPoint("TOPLEFT", f.depositPreview.rows[DEPOSIT_PREVIEW_ROW_COUNT], "BOTTOMLEFT", 2, -7)
+    f.depositPreview.more:SetPoint("RIGHT", -18, 0)
+    f.depositPreview.more:SetJustifyH("LEFT")
+    f.depositPreview.more:SetText("")
+
+    f.depositPreview.confirm = self:CreateButton(f.depositPreview, 132, 28, "Confirm")
+    f.depositPreview.confirm:SetPoint("BOTTOMRIGHT", -154, 16)
+    f.depositPreview.confirm:SetScript("OnClick", function()
+        RB:ConfirmDepositPreview()
+    end)
+
+    f.depositPreview.cancel = self:CreateButton(f.depositPreview, 112, 28, "Cancel")
+    f.depositPreview.cancel:SetPoint("LEFT", f.depositPreview.confirm, "RIGHT", 10, 0)
+    f.depositPreview.cancel:SetScript("OnClick", function()
+        RB:HideDepositPreview()
+    end)
+
     f.footer = CreateFrame("Frame", nil, f)
     f.footer:SetPoint("BOTTOMLEFT", 18, 18)
     f.footer:SetPoint("BOTTOMRIGHT", -18, 18)
     f.footer:SetHeight(24)
     self:MakeBackdrop(f.footer, 0.58, true)
 
+    f.undoLast = self:CreateButton(f.footer, UNDO_BUTTON_WIDTH, 20, "Reverse Last")
+    f.undoLast:SetPoint("RIGHT", -3, 0)
+    f.undoLast:SetScript("OnClick", function()
+        RB:ReverseLastTransaction()
+    end)
+    f.undoLast:SetScript("OnEnter", function(selfButton)
+        GameTooltip:SetOwner(selfButton, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Reverse last reagent bank action", 1, 0.82, 0)
+        GameTooltip:AddLine(selfButton.tooltipText or "No reversible transaction is available.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    f.undoLast:SetScript("OnLeave", HideTooltip)
+
     f.status = f.footer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     f.status:SetPoint("LEFT", 8, 0)
-    f.status:SetPoint("RIGHT", -8, 0)
+    f.status:SetPoint("RIGHT", f.undoLast, "LEFT", -8, 0)
     f.status:SetJustifyH("LEFT")
     f.status:SetText("")
 
@@ -1891,6 +3890,7 @@ function RB:CreateFrame()
 
     self.frame = f
     self:ApplyScale()
+    self:ApplySkin()
     self:UpdateControls()
 end
 
@@ -1971,6 +3971,8 @@ function RB:UpdateControls()
     self:SetButtonEnabled(f.refresh, not busy)
     self:SetButtonEnabled(f.rootDeposit, not busy)
     self:SetButtonEnabled(f.rootWithdraw, not busy)
+    self:SetButtonEnabled(f.sortMode, not busy)
+    self:SetButtonEnabled(f.previewToggle, not busy)
     self:SetButtonEnabled(f.back, not busy)
     self:SetButtonEnabled(f.catDeposit, not busy and inCategory and hasCategory)
     self:SetButtonEnabled(f.catWithdraw, not busy and inCategory and hasCategory)
@@ -1989,6 +3991,16 @@ function RB:UpdateControls()
     self:SetButtonEnabled(f.withdrawItemAll, not busy and inDetail and stored >= 1)
     self:SetButtonEnabled(f.withdrawExact, not busy and inDetail and stored >= 1 and exactAmount >= 1)
     self:SetButtonEnabled(f.detailBack, not busy)
+
+    if f.depositPreview then
+        self:SetButtonEnabled(f.depositPreview.confirm, not busy and self.depositPreview ~= nil)
+        self:SetButtonEnabled(f.depositPreview.cancel, true)
+    end
+
+    self:UpdateSortButton()
+    self:UpdatePreviewToggleButton()
+    self:UpdateQuickWithdrawControls()
+    self:UpdateUndoButton()
 end
 
 function RB:ClearRows()
@@ -1998,6 +4010,10 @@ function RB:ClearRows()
         row.kind = nil
         row.categoryId = nil
         row.item = nil
+        if row.fill then
+            row.fill:SetWidth(1)
+            row.fill:Hide()
+        end
         row.icon:Show()
         row.icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
         row.text:ClearAllPoints()
@@ -2009,6 +4025,36 @@ function RB:ClearRows()
     end
 end
 
+function RB:SetRowFill(row, value, maxValue)
+    if not row or not row.fill then
+        return
+    end
+
+    value = tonumber(value) or 0
+    maxValue = tonumber(maxValue) or 0
+
+    if value <= 0 or maxValue <= 0 then
+        row.fill:SetWidth(1)
+        row.fill:Hide()
+        return
+    end
+
+    local width = row:GetWidth() or 0
+    if width <= 0 then
+        width = 640
+    end
+
+    local pct = value / maxValue
+    if pct < 0.04 then
+        pct = 0.04
+    elseif pct > 1.0 then
+        pct = 1.0
+    end
+
+    row.fill:SetWidth(math.floor(width * pct))
+    row.fill:Show()
+end
+
 function RB:SetEmptyRow(text)
     local f = self.frame
     local row = f.rows[1]
@@ -2016,6 +4062,10 @@ function RB:SetEmptyRow(text)
     row.kind = nil
     row.categoryId = nil
     row.item = nil
+    if row.fill then
+        row.fill:SetWidth(1)
+        row.fill:Hide()
+    end
     row.icon:Show()
     row.icon:SetTexture("Interface\\Icons\\INV_Misc_Bag_10")
     row.text:ClearAllPoints()
@@ -2027,6 +4077,7 @@ function RB:SetEmptyRow(text)
 end
 
 function RB:RenderRoot(preserveStatus)
+    self:HideWithdrawPrompt()
     self:CreateFrame()
 
     self.currentView = "root"
@@ -2037,8 +4088,16 @@ function RB:RenderRoot(preserveStatus)
 
     local f = self.frame
     f:Show()
+    local grandTypes = 0
+    local grandAmount = 0
+    for _, info in pairs(self.categories or {}) do
+        grandTypes = grandTypes + (tonumber(info.types) or 0)
+        grandAmount = grandAmount + (tonumber(info.amount) or 0)
+    end
+
     f.title:SetText("Reagent Bank")
-    f.modeText:SetText(self.accountWide and "|cff80ff80Account-wide|r" or "|cffffcc80Character-only|r")
+    f.modeText:SetText((self.accountWide and "|cff80ff80Account-wide|r" or "|cffffcc80Character-only|r") ..
+        "  |  " .. FormatCount(grandTypes) .. " types / " .. FormatCount(grandAmount) .. " reagents")
     f.pageText:SetText("")
     f.headerName:ClearAllPoints()
     f.headerName:SetPoint("LEFT", 32, 0)
@@ -2048,12 +4107,52 @@ function RB:RenderRoot(preserveStatus)
     self:SetCommonVisibility("root")
     self:ClearRows()
 
+    local categories = {}
+    local maxCategoryAmount = 0
+
     for index, category in ipairs(CATEGORY_ORDER) do
+        local info = self.categories and self.categories[category.id] or nil
+        local types = info and info.types or 0
+        local amount = info and info.amount or 0
+
+        table.insert(categories, {
+            id = category.id,
+            name = category.name,
+            sample = category.sample,
+            order = index,
+            types = types,
+            amount = amount,
+        })
+
+        if amount > maxCategoryAmount then
+            maxCategoryAmount = amount
+        end
+    end
+
+    local categorySortMode = self:GetCategorySortMode()
+    if categorySortMode ~= "order" then
+        table.sort(categories, function(a, b)
+            if categorySortMode == "name" then
+                if a.name ~= b.name then
+                    return a.name < b.name
+                end
+            elseif categorySortMode == "types" then
+                if a.types ~= b.types then
+                    return a.types > b.types
+                end
+            elseif categorySortMode == "amount" then
+                if a.amount ~= b.amount then
+                    return a.amount > b.amount
+                end
+            end
+
+            return a.order < b.order
+        end)
+    end
+
+    for index, category in ipairs(categories) do
         local row = f.rows[index]
         if row then
-            local info = self.categories and self.categories[category.id] or nil
-            local types = info and info.types or 0
-            local amount = info and info.amount or 0
             local icon = GetItemIcon(category.sample) or "Interface\\Icons\\INV_Misc_QuestionMark"
 
             row.kind = "category"
@@ -2065,7 +4164,8 @@ function RB:RenderRoot(preserveStatus)
             row.text:SetPoint("LEFT", row.icon, "RIGHT", 9, 0)
             row.text:SetPoint("RIGHT", -170, 0)
             row.text:SetText(category.name)
-            row.count:SetText(FormatCount(types) .. " types / " .. FormatCount(amount))
+            row.count:SetText(FormatCount(category.types) .. " types / " .. FormatCount(category.amount))
+            self:SetRowFill(row, category.amount, maxCategoryAmount)
             row:Show()
         end
     end
@@ -2104,6 +4204,14 @@ function RB:RenderCategory(preserveStatus)
     self:ClearRows()
 
     local missingItemInfo = false
+    local maxItemAmount = 0
+
+    for _, item in ipairs(self.items or {}) do
+        local amountValue = tonumber(item.amount) or 0
+        if amountValue > maxItemAmount then
+            maxItemAmount = amountValue
+        end
+    end
 
     for index, item in ipairs(self.items or {}) do
         local row = f.rows[index]
@@ -2123,6 +4231,7 @@ function RB:RenderCategory(preserveStatus)
             row.text:SetPoint("RIGHT", -170, 0)
             row.text:SetText(link or name)
             row.count:SetText("x" .. FormatCount(item.amount))
+            self:SetRowFill(row, item.amount, maxItemAmount)
             row:Show()
         end
     end
@@ -2146,6 +4255,7 @@ function RB:RenderCategory(preserveStatus)
 end
 
 function RB:ShowDetail(item, preserveStatus)
+    self:HideWithdrawPrompt()
     if not item or not item.entry then
         return
     end
@@ -2187,6 +4297,8 @@ function RB:ShowDetail(item, preserveStatus)
 end
 
 function RB:Close()
+    self:HideWithdrawPrompt()
+    self:HideDepositPreview()
     self.awaitingView = nil
     self.busyKind = nil
     self.busyText = nil
@@ -2215,7 +4327,12 @@ function RB:HandleOK(okText)
         okText = "Server acknowledged."
     end
 
+    if self.lastTransaction and self.lastTransaction.updatedAt and GetTime() - self.lastTransaction.updatedAt <= 2.0 then
+        okText = okText .. " " .. self:BuildTransactionSummary(self.lastTransaction)
+    end
+
     self:ClearBusy(okText, 0.45, 1.00, 0.45)
+    self:UpdateUndoButton()
 
     if self.mutationNeedsRefresh then
         local refreshTarget = self.mutationNeedsRefresh
@@ -2258,6 +4375,157 @@ function RB:HandleProtocol(message)
     local parts = SplitColon(message)
     local recordType = parts[2]
 
+    if not recordType then
+        return true
+    end
+
+    if recordType == "PREVIEW" then
+        local previewKind = parts[3]
+
+        if previewKind == "BEGIN" then
+            self.pendingDepositPreview = {
+                scope = tostring(parts[4] or "all"),
+                categoryId = tonumber(parts[5]) or 0,
+                total = tonumber(parts[6]) or 0,
+                expected = tonumber(parts[7]) or 0,
+                items = {},
+            }
+            return true
+        elseif previewKind == "ITEM" then
+            if self.pendingDepositPreview then
+                local itemEntry = tonumber(parts[4])
+                local amount = tonumber(parts[5]) or 0
+
+                if itemEntry and itemEntry > 0 and amount > 0 then
+                    table.insert(self.pendingDepositPreview.items, {
+                        entry = math.floor(itemEntry),
+                        amount = math.floor(amount),
+                    })
+                end
+            end
+            return true
+        elseif previewKind == "END" then
+            local preview = self.pendingDepositPreview
+            self.pendingDepositPreview = nil
+
+            if preview then
+                preview.scope = tostring(parts[4] or preview.scope or "all")
+                preview.categoryId = tonumber(parts[5]) or preview.categoryId or 0
+                preview.total = tonumber(parts[6]) or preview.total or 0
+                self:ShowDepositPreview(preview)
+            end
+
+            return true
+        end
+
+        return true
+    end
+
+    if recordType == "CHECK" then
+        local checkKind = parts[3]
+
+        if checkKind == "BEGIN" then
+            self.pendingBankCheck = {
+                requestId = tonumber(parts[4]) or 0,
+                expected = tonumber(parts[5]) or 0,
+                counts = {},
+            }
+            return true
+        elseif checkKind == "ITEM" then
+            if self.pendingBankCheck then
+                local itemEntry = tonumber(parts[4])
+                local amount = tonumber(parts[5]) or 0
+
+                if itemEntry and itemEntry > 0 then
+                    self.pendingBankCheck.counts[math.floor(itemEntry)] = math.max(0, math.floor(amount))
+                end
+            end
+            return true
+        elseif checkKind == "END" then
+            local check = self.pendingBankCheck
+            self.pendingBankCheck = nil
+
+            if check then
+                local requestId = tonumber(parts[4]) or check.requestId or 0
+                local pending = self.pendingTradeSkillChecks and self.pendingTradeSkillChecks[requestId] or nil
+
+                if pending then
+                    self.tradeSkillBankCounts = check.counts or {}
+                    self.tradeSkillBankCountsKey = pending.key
+                    self.pendingTradeSkillChecks[requestId] = nil
+                    if self.pendingTradeSkillCheckKey == pending.key then
+                        self.pendingTradeSkillCheckKey = nil
+                        self.pendingTradeSkillCheckUntil = nil
+                    end
+
+                    self:UpdateTradeSkillControls()
+                end
+            end
+
+            return true
+        end
+
+        return true
+    end
+
+    if recordType == "TX" then
+        local txKind = parts[3]
+
+        if txKind == "BEGIN" then
+            local action = self:NormalizeTransactionAction(parts[4])
+            if action then
+                local context = self:TakeTransactionContext(action)
+                self.pendingTransaction = {
+                    action = action,
+                    source = SafeTransactionSource(parts[7] or (context and context.source) or "manual"),
+                    label = context and context.label or nil,
+                    total = tonumber(parts[5]) or 0,
+                    expected = tonumber(parts[6]) or 0,
+                    items = {},
+                }
+            else
+                self.pendingTransaction = nil
+            end
+
+            return true
+        elseif txKind == "ITEM" then
+            if self.pendingTransaction then
+                local itemEntry = tonumber(parts[4])
+                local amount = tonumber(parts[5]) or 0
+
+                if itemEntry and itemEntry > 0 and amount > 0 then
+                    table.insert(self.pendingTransaction.items, {
+                        entry = math.floor(itemEntry),
+                        amount = math.floor(amount),
+                    })
+                end
+            end
+
+            return true
+        elseif txKind == "SOURCE" then
+            if self.pendingTransaction then
+                self.pendingTransaction.source = SafeTransactionSource(parts[4] or self.pendingTransaction.source)
+            end
+
+            return true
+        elseif txKind == "END" then
+            local transaction = self.pendingTransaction
+            self.pendingTransaction = nil
+
+            if transaction then
+                local action = self:NormalizeTransactionAction(parts[4])
+                if action and action == transaction.action then
+                    transaction.total = tonumber(parts[5]) or transaction.total or 0
+                    self:FinalizeTransaction(transaction)
+                end
+            end
+
+            return true
+        end
+
+        return true
+    end
+
     if recordType == "BEGIN" then
         local view = parts[3]
 
@@ -2266,13 +4534,17 @@ function RB:HandleProtocol(message)
             self.pendingCategories = {}
             self.accountWide = tonumber(parts[4]) == 1
         elseif view == "CATEGORY" then
-            self.pendingView = "category"
-            self.pendingItems = {}
-            self.pendingCategoryId = tonumber(parts[4])
-            self.pendingPage = tonumber(parts[5]) or 0
-            self.pendingTotalPages = tonumber(parts[6]) or 1
-            self.pendingTypeCount = tonumber(parts[7]) or 0
-            self.pendingAmount = tonumber(parts[8]) or 0
+            local categoryId = tonumber(parts[4])
+            if categoryId then
+                self.pendingView = "category"
+                self.pendingItems = {}
+                self.pendingCategoryId = categoryId
+                self.pendingPage = tonumber(parts[5]) or 0
+                self.pendingTotalPages = tonumber(parts[6]) or 1
+                self.pendingTypeCount = tonumber(parts[7]) or 0
+                self.pendingAmount = tonumber(parts[8]) or 0
+                self.pendingSortMode = NormalizeItemSortMode(parts[9] or self:GetItemSortMode())
+            end
         end
 
         return true
@@ -2280,12 +4552,15 @@ function RB:HandleProtocol(message)
 
     if recordType == "CAT" and self.pendingView == "root" then
         local categoryId = tonumber(parts[3])
+        local sample = tonumber(parts[4]) or 0
+        local types = tonumber(parts[5]) or 0
+        local amount = tonumber(parts[6]) or 0
 
-        if categoryId then
+        if categoryId and CATEGORY_BY_ID[categoryId] then
             self.pendingCategories[categoryId] = {
-                sample = tonumber(parts[4]) or 0,
-                types = tonumber(parts[5]) or 0,
-                amount = tonumber(parts[6]) or 0,
+                sample = sample,
+                types = math.max(0, math.floor(types)),
+                amount = math.max(0, math.floor(amount)),
             }
         end
 
@@ -2293,10 +4568,15 @@ function RB:HandleProtocol(message)
     end
 
     if recordType == "ITEM" and self.pendingView == "category" then
-        table.insert(self.pendingItems, {
-            entry = tonumber(parts[3]) or 0,
-            amount = tonumber(parts[4]) or 0,
-        })
+        local itemEntry = tonumber(parts[3])
+        local amount = tonumber(parts[4]) or 0
+
+        if itemEntry and itemEntry > 0 and amount > 0 then
+            table.insert(self.pendingItems, {
+                entry = math.floor(itemEntry),
+                amount = math.floor(amount),
+            })
+        end
 
         return true
     end
@@ -2320,6 +4600,7 @@ function RB:HandleProtocol(message)
             self.totalPages = self.pendingTotalPages or 1
             self.categoryTypeCount = self.pendingTypeCount or 0
             self.categoryAmount = self.pendingAmount or 0
+            self.currentSortMode = NormalizeItemSortMode(self.pendingSortMode or self:GetItemSortMode())
             self.items = self.pendingItems or {}
             self.pendingItems = nil
             self.pendingView = nil
@@ -2383,6 +4664,64 @@ SlashCmdList["REAGENTBANKUI"] = function(msg)
         return
     end
 
+    if command == "sort" then
+        ReagentBankUIDB = ReagentBankUIDB or {}
+        local lowerValue = string.lower(value or "")
+
+        if lowerValue == "" or lowerValue == "cycle" then
+            if RB.currentView == "root" or not RB.currentCategoryId then
+                ReagentBankUIDB.categorySortMode = CycleCategorySortMode(ReagentBankUIDB.categorySortMode)
+                RB:RenderRoot()
+                PrintAddon("category sort set to " .. CategorySortLabel(ReagentBankUIDB.categorySortMode) .. ".")
+            else
+                ReagentBankUIDB.sortMode = CycleItemSortMode(ReagentBankUIDB.sortMode)
+                RB:RequestCategory(RB.currentCategoryId, 0)
+                PrintAddon("item sort set to " .. ItemSortLabel(ReagentBankUIDB.sortMode) .. ".")
+            end
+        else
+            ReagentBankUIDB.sortMode = NormalizeItemSortMode(lowerValue)
+            if RB.currentCategoryId then
+                RB:RequestCategory(RB.currentCategoryId, 0)
+            end
+            PrintAddon("item sort set to " .. ItemSortLabel(ReagentBankUIDB.sortMode) .. ".")
+        end
+
+        return
+    end
+
+    if command == "preview" or command == "confirm" or command == "confirmation" then
+        local lowerValue = string.lower(value or "")
+
+        if lowerValue == "on" or lowerValue == "1" or lowerValue == "true" or lowerValue == "yes" then
+            RB:SetDepositPreviewEnabled(true)
+        elseif lowerValue == "off" or lowerValue == "0" or lowerValue == "false" or lowerValue == "no" then
+            RB:SetDepositPreviewEnabled(false)
+        else
+            RB:ToggleDepositPreviewEnabled()
+        end
+
+        return
+    end
+
+    if command == "settings" or command == "options" or command == "colors" or command == "color" then
+        RB:ToggleColorSettings()
+        return
+    end
+
+    if command == "theme" or command == "schema" or command == "scheme" then
+        local lowerValue = string.lower(Trim(value or ""))
+
+        if lowerValue == "" or lowerValue == "settings" or lowerValue == "options" then
+            RB:ToggleColorSettings()
+        elseif lowerValue == "cycle" or lowerValue == "next" then
+            RB:CycleColorTheme()
+        else
+            RB:SetColorTheme(lowerValue)
+        end
+
+        return
+    end
+
     if command == "autodeposit" then
         ReagentBankUIDB = ReagentBankUIDB or {}
         local lowerValue = string.lower(value or "")
@@ -2405,6 +4744,11 @@ SlashCmdList["REAGENTBANKUI"] = function(msg)
         return
     end
 
+    if command == "undo" or command == "reverse" then
+        RB:ReverseLastTransaction()
+        return
+    end
+
     if command == "scale" then
         local numberValue = tonumber(value)
 
@@ -2424,6 +4768,9 @@ SlashCmdList["REAGENTBANKUI"] = function(msg)
     DEFAULT_CHAT_FRAME:AddMessage("  /rbank")
     DEFAULT_CHAT_FRAME:AddMessage("  /rbank refresh")
     DEFAULT_CHAT_FRAME:AddMessage("  /rbank hide")
+    DEFAULT_CHAT_FRAME:AddMessage("  /rbank sort id|name|amount|amount_asc")
+    DEFAULT_CHAT_FRAME:AddMessage("  /rbank preview on|off")
+    DEFAULT_CHAT_FRAME:AddMessage("  /rbank undo")
     DEFAULT_CHAT_FRAME:AddMessage("  /rbank scale 0.75 - 1.20")
     DEFAULT_CHAT_FRAME:AddMessage("  /rbank autodeposit on|off")
 end
@@ -2437,6 +4784,9 @@ RB:SetScript("OnEvent", function(self, event, ...)
             if ReagentBankUIDB.autoDepositLeftovers == nil then
                 ReagentBankUIDB.autoDepositLeftovers = false
             end
+            ReagentBankUIDB.sortMode = NormalizeItemSortMode(ReagentBankUIDB.sortMode)
+            ReagentBankUIDB.categorySortMode = NormalizeCategorySortMode(ReagentBankUIDB.categorySortMode)
+            self:ApplySavedColorTheme()
             if ReagentBankUIDB.tradeSkillPrepareCount == nil then
                 ReagentBankUIDB.tradeSkillPrepareCount = 1
             else
@@ -2450,7 +4800,9 @@ RB:SetScript("OnEvent", function(self, event, ...)
             self:CreateTradeSkillControls()
         end
     elseif event == "PLAYER_LOGIN" then
+        self:ApplySavedColorTheme()
         self:CreatePaperDollButton()
+        self:ApplySkin()
         self:CreateTradeSkillControls()
     elseif event == "TRADE_SKILL_SHOW" then
         self:CreateTradeSkillControls()
