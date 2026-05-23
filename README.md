@@ -9,6 +9,7 @@ Reagent bank system for AzerothCore with a required UI addon. Based off the coun
 - Stores reagents (trade goods, gems)
 - Account-wide or character-wide (config)
 - Deposit / withdraw handled through the addon UI
+- You can also set a timer to have it auto deposit at a set interval.
 
 ---
 
