@@ -21,3 +21,7 @@ ReagentBankAccount.AccountWide = 0
 #        Default:     16
 #
 ReagentBankAccount.MaxOptionsPerPage = 16
+
+ReagentBankAccount.MaxItemsPerPage = 20
+
+ReagentBankAccount.AutoMigrate = 1
